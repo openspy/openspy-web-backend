@@ -30,19 +30,15 @@ namespace CoreWeb.Controllers.Presence
     [ApiController]
     public class ListController : Controller
     {
-        private IMQConnectionFactory connectionFactory;
-        private IRedisClientsManager redisClientManager;
         private IRepository<User, UserLookup> userRepository;
         private IRepository<Profile, ProfileLookup> profileRepository;
         private BuddyRepository buddyRepository;
         private BlockRepository blockRepository;
         
-        public ListController(IRedisClientsManager redisClientManager, IMQConnectionFactory connectionFactory, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository)
+        public ListController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository)
         {
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
-            this.redisClientManager = redisClientManager;
-            this.connectionFactory = connectionFactory;
             this.buddyRepository = (BuddyRepository)buddyRepository;
             this.blockRepository = (BlockRepository)blockRepository;
         }

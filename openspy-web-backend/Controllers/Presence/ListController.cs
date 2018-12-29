@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using CoreWeb.Models;
 using CoreWeb.Database;
 using ServiceStack.Redis;
 using CoreWeb.Repository;
-using RabbitMQ.Client;
-using System.Collections.Concurrent;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 

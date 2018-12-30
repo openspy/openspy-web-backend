@@ -7,6 +7,7 @@ using CoreWeb.Models;
 using CoreWeb.Database;
 using ServiceStack.Redis;
 using CoreWeb.Repository;
+using Microsoft.AspNetCore.Authorization;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -28,6 +29,7 @@ namespace CoreWeb.Controllers.Presence
     };
     [Route("v1/Presence/[controller]")]
     [ApiController]
+    [Authorize(Policy = "Presence")]
     public class ListController : Controller
     {
         private IRepository<User, UserLookup> userRepository;

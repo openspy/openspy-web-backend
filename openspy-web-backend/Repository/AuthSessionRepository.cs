@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using CoreWeb.Crypto;
 
 namespace CoreWeb.Repository
 {
@@ -33,9 +34,9 @@ namespace CoreWeb.Repository
         private IRepository<Profile, ProfileLookup> profileRepository;
         private IRepository<Game, GameLookup> gameRepository;
         private IMQConnectionFactory mqConnectionFactory;
-        private RSAProvider rsaProvider;
+        private PresencePreAuthProvider rsaProvider;
         private TimeSpan defaultTimeSpan;
-        public AuthSessionRepository(IRedisClientsManager redisClientManager, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, RSAProvider rsaProvider)
+        public AuthSessionRepository(IRedisClientsManager redisClientManager, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, PresencePreAuthProvider rsaProvider)
         {
             this.defaultTimeSpan = TimeSpan.FromHours(2);
             this.redisClientManager = redisClientManager;

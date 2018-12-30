@@ -6,11 +6,13 @@ using CoreWeb.Models;
 using CoreWeb.Repository;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers.Presence
 {
     [Route("v1/Presence/[controller]")]
     [ApiController]
+    [Authorize(Policy = "Presence")]
     public class StatusController : ControllerBase
     {
         private PresenceProfileStatusRepository profileStatusRepository;

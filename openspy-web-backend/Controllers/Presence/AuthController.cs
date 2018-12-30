@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using CoreWeb.Models;
 using CoreWeb.Repository;
 using CoreWeb.Exception;
+using Microsoft.AspNetCore.Authorization;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -65,6 +66,7 @@ namespace CoreWeb.Controllers.Presence
 
     [Route("v1/Presence/[controller]")]
     [ApiController]
+    [Authorize(Policy = "Presence")]
     public class AuthController : Controller
     {
         const String PROOF_BIG_SPACE = "                                                ";

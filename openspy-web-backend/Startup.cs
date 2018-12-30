@@ -52,6 +52,10 @@ namespace CoreWeb
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
 
 
+            //weak RSA provider... 256 bit key length... due to GP max ticket length = 255 bytes...
+            services.AddSingleton<RSAProvider>(c => new RSAProvider("MIIBOQIBAAJBAIXDkFy6wWnFLkO5egYrB4eZAP2n8goPcyjFcGdw8xLhYHhXuVURjPi2kB+bcNZBGX/FBNfLyKKp+mfW+fQdXCkCASUCQD11h4SNKG7eDlZ30EgF7rPsWma08qqtJxK7lIKN13df8RzPB3nlwMuTMdpvC02xj3gYJ0fBginbGtRxur2hXKECIQD1PQ56QSfP+cjKfx8gyd3sCxn1KMWA5t0D+RPeka9DmwIhAIuiO1v7jEaPJeCm9ApFLARCHCOaYR1gs9on6bIgDuWLAiEA1BkhRyOYDdEcXBrqfTj3SK+nv0XbPwza0wDulvqJve0CIHyJxj1IIyospT38sCTV6PzhBFca/Kt/wwDXfWeEYFAvAiEA7om52jckNWsTLKA1b34ymnXdotJz7HBvXL8/p50RhKg="));
+
+
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {

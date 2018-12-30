@@ -14,10 +14,11 @@ namespace CoreWeb.Models
     public class PresenceProfileStatus
     {
         public Profile profile;
-        public String address;
-        public System.UInt32 quietFlags;
+        public String IP;
+        public UInt16 Port;
+        public UInt32 quietFlags;
         public String locationText;
         public String statusText;
-        public System.UInt32 statusFlags;
+        public UInt32 statusFlags;
     }
 }

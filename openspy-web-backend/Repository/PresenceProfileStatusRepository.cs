@@ -42,11 +42,12 @@ namespace CoreWeb.Repository
         {
             PresenceProfileStatus status = new PresenceProfileStatus();
             var redis_hash_key = "status_" + profile.Id;
+            status.IP = redis.GetValueFromHash(redis_hash_key, "address");
+            ushort.TryParse(redis.GetValueFromHash(redis_hash_key, "port"), out status.Port);
             uint.TryParse(redis.GetValueFromHash(redis_hash_key, "status"), out status.statusFlags);
             uint.TryParse(redis.GetValueFromHash(redis_hash_key, "quiet_flags"), out status.quietFlags);
             status.statusText = redis.GetValueFromHash(redis_hash_key, "status_string");
             status.locationText = redis.GetValueFromHash(redis_hash_key, "location_string");
-            status.address = redis.GetValueFromHash(redis_hash_key, "address") + ":" + redis.GetValueFromHash(redis_hash_key, "port");
             return status;
         }
         public async Task<bool> Delete(PresenceProfileLookup lookup)
@@ -79,12 +80,12 @@ namespace CoreWeb.Repository
             lookup.id = model.profile.Id;
             var to_profile = (await this.profileRepository.Lookup(lookup)).First();
 
-            var address = "127.0.0.1";
-            var port = "5150";
             using (IRedisClient redis = redisClientManager.GetClient())
             {
                 redis.Db = PRESENCE_STATUS_REDISDB;
                 var redis_key = "status_" + to_profile.Id.ToString();
+                redis.SetEntryInHash(redis_key, "address", model.IP.ToString());
+                redis.SetEntryInHash(redis_key, "port", model.Port.ToString());
                 redis.SetEntryInHash(redis_key, "status", model.statusFlags.ToString());
                 redis.SetEntryInHash(redis_key, "status_string", model.statusText);
                 redis.SetEntryInHash(redis_key, "location_string", model.locationText);
@@ -95,7 +96,7 @@ namespace CoreWeb.Repository
                     using (IModel channel = connection.CreateModel())
                     {
                         String message = String.Format("\\type\\status_update\\profileid\\{0}\\status_string\\{1}\\status\\{2}\\location_string\\{3}\\quiet_flags\\{4}\\ip\\{5}\\port\\{6}", to_profile.Id,
-                    model.statusText, model.statusFlags, model.locationText, model.quietFlags, address, port);
+                    model.statusText, model.statusFlags, model.locationText, model.quietFlags, model.IP, model.Port);
                         byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
                         IBasicProperties props = channel.CreateBasicProperties();

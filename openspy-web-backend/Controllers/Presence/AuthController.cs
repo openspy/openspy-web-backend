@@ -37,10 +37,14 @@ namespace CoreWeb.Controllers.Presence
         /// Profile data to perform auth against  (Used for Nick/Unique nick auth)
         /// </summary>
         public ProfileLookup profile;
+
+        /// <summary>
+        /// The time the session will expire at (in seconds)
+        /// </summary>
+        public int? expiresAtSeconds;
     };
     public class AuthResponse
     {
-        public String proof;
         public Profile profile;
         public String server_response;
         public String session_key;
@@ -67,23 +71,83 @@ namespace CoreWeb.Controllers.Presence
         IRepository<User, UserLookup> userRepository;
         IRepository<Profile, ProfileLookup> profileRepository;
         IRepository<Game, GameLookup> gameRepository;
-        IRepository<Session, SessionLookup> sessionRepository;
+        AuthSessionRepository sessionRepository;
         public AuthController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IRepository<Session, SessionLookup> sessionRepository)
         {
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;
-            this.sessionRepository = sessionRepository;
+            this.sessionRepository = (AuthSessionRepository)sessionRepository;
         }
         [HttpPost("GenAuthTicket")]
-        public GenAuthTicketResponse GenAuthTicket([FromBody] AuthRequest authRequest)
+        public async Task<GenAuthTicketResponse> GenAuthTicket([FromBody] AuthRequest authRequest)
         {
-            throw new NotImplementedException();
+            GenAuthTicketResponse response = new GenAuthTicketResponse();
+            var profile = (await profileRepository.Lookup(authRequest.profile)).First();
+            if (profile == null) throw new AuthNoSuchUserException();
+
+            DateTime expiresAt = DateTime.Now.AddDays(1);
+
+            if(authRequest.expiresAtSeconds.HasValue)
+            {
+                TimeSpan ts = TimeSpan.FromSeconds(authRequest.expiresAtSeconds.Value);
+                expiresAt = expiresAt.Add(ts);
+            }
+
+            Tuple<String, String> ticket_data = await sessionRepository.generateAuthToken(profile, expiresAt);
+            response.token = ticket_data.Item1;
+            response.challenge = ticket_data.Item2;
+            return response;
         }
         [HttpPost("PreAuth")]
-        public AuthResponse PreAuth([FromBody] AuthRequest authRequest)
+        public async Task<AuthResponse> PreAuth([FromBody] AuthRequest authRequest)
         {
-            throw new NotImplementedException();
+            Dictionary<string, string> dict = await sessionRepository.decodeAuthToken(authRequest.auth_token);
+            if(dict == null) throw new AuthInvalidCredentialsException();
+            DateTime expireTime;
+            AuthResponse response = new AuthResponse();
+            if (dict.Keys.Contains("expiresAt"))
+            {
+                long fileTime;
+                long.TryParse(dict["expiresAt"], out fileTime);
+                expireTime = DateTime.FromFileTimeUtc(fileTime);
+                if (DateTime.UtcNow > expireTime)
+                {
+                    throw new AuthInvalidCredentialsException();
+                }
+            }
+            
+
+            ProfileLookup profileLookup = new ProfileLookup();
+            UserLookup userLookup = new UserLookup();
+            int profileId;
+
+            int.TryParse(dict["profileId"], out profileId);
+            profileLookup.id = profileId;
+
+            int.TryParse(dict["userId"], out profileId);
+            userLookup.id = profileId;
+
+            var user = (await userRepository.Lookup(userLookup)).First();
+
+            response.profile = (await profileRepository.Lookup(profileLookup)).First();
+            response.success = true;
+
+            //authRequest.client_response = authRequest.auth_token_challenge;
+            var client_response = authRequest.client_response;
+            authRequest.client_response = dict["true_signature"];
+
+
+            //test validity of auth token... confirm the users token is signed against "true_signature"
+            if(client_response.CompareTo(GetPasswordProof(response.profile, authRequest, ProofType.ProofType_PreAuth, true)) != 0)
+            {
+                throw new AuthInvalidCredentialsException();
+            }
+
+            response.server_response = GetPasswordProof(response.profile, authRequest, ProofType.ProofType_PreAuth, false);
+            response.session_key = await generateSessionKey(response.profile);
+            response.success = true;
+            return response;
         }
         [HttpPost("NickEmailAuth")]
         public Task<AuthResponse> NickEmailAuth([FromBody] AuthRequest authRequest)
@@ -159,7 +223,7 @@ namespace CoreWeb.Controllers.Presence
                     }
                     break;
                 case ProofType.ProofType_PreAuth:
-                    password = "token challenge";
+                    password = request.client_response;
                     sb.Append(request.auth_token);
                     break;
             }

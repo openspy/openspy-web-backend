@@ -1,13 +1,15 @@
 ﻿using CoreWeb.Database;
 using CoreWeb.Models;
+using Newtonsoft.Json;
 using ServiceStack.Redis;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-
 
 namespace CoreWeb.Repository
 {
@@ -31,8 +33,9 @@ namespace CoreWeb.Repository
         private IRepository<Profile, ProfileLookup> profileRepository;
         private IRepository<Game, GameLookup> gameRepository;
         private IMQConnectionFactory mqConnectionFactory;
+        private RSAProvider rsaProvider;
         private TimeSpan defaultTimeSpan;
-        public AuthSessionRepository(IRedisClientsManager redisClientManager, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory)
+        public AuthSessionRepository(IRedisClientsManager redisClientManager, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, RSAProvider rsaProvider)
         {
             this.defaultTimeSpan = TimeSpan.FromHours(2);
             this.redisClientManager = redisClientManager;
@@ -40,6 +43,7 @@ namespace CoreWeb.Repository
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;
             this.mqConnectionFactory = mqConnectionFactory;
+            this.rsaProvider = rsaProvider;
         }
         public Task<IEnumerable<Session>> Lookup(SessionLookup lookup)
         {
@@ -66,7 +70,7 @@ namespace CoreWeb.Repository
                     if (model.profile != null && model.profile.Id != 0)
                     {
                         redis.SetEntryInHash(session_key, "profileid", model.profile.Id.ToString());
-                        redis.SetEntryInHash(session_key, "userid", model.profile.User.Id.ToString());
+                        redis.SetEntryInHash(session_key, "userid", model.profile.Userid.ToString());
                     } else
                     {
                         throw new ArgumentException();
@@ -104,6 +108,49 @@ namespace CoreWeb.Repository
         private void SendLoginEvent()
         {
             //post MQ message with peer app name/addr
+        }
+
+        public Task<Dictionary<string, string>> decodeAuthToken(String token)
+        {
+            return Task.Run(async () =>
+            {
+                byte[] rawData = Convert.FromBase64String(token);
+                var json_buff = Encoding.ASCII.GetString(rawData);
+                Dictionary<string, string> tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(json_buff);
+
+                tokenData["true_signature"] = await generateTokenSignature(rawData);
+
+                return tokenData;
+            });
+        }
+        public Task<Tuple<String, String>> generateAuthToken(Profile profile, DateTime? expiresAt)
+        {
+            return Task.Run(async() =>
+            {
+                Dictionary<string, string> authData = new Dictionary<string, string>();
+
+                authData["profileId"] = profile.Id.ToString();
+                authData["userId"] = profile.Userid.ToString();
+                if (expiresAt.HasValue)
+                    authData["expiresAt"] = expiresAt.Value.ToFileTimeUtc().ToString();
+
+                var json_buff = JsonConvert.SerializeObject(authData);
+                var json_bytes = Encoding.UTF8.GetBytes(json_buff);
+                  
+                var auth_token = Convert.ToBase64String(json_bytes);
+                var challenge = await generateTokenSignature(json_bytes);
+
+                return new Tuple<String, String>(auth_token, challenge);
+            });
+            
+        }
+        public Task<String> generateTokenSignature(byte[] token)
+        {
+            return Task.Run(() =>
+            {
+                var signature = this.rsaProvider.Sign(token);
+                return Convert.ToBase64String(signature);
+            });
         }
     }
 }

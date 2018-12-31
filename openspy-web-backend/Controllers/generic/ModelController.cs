@@ -21,28 +21,28 @@ namespace CoreWeb.Controllers.generic
 
         // GET: api/<controller>
         [HttpPost("lookup")]
-        public Task<IEnumerable<Mdl>> Get([FromBody] Lkup lookup)
+        public virtual Task<IEnumerable<Mdl>> Get([FromBody] Lkup lookup)
         {
             return repository.Lookup(lookup);
         }
 
         // POST api/<controller>
         [HttpPost]
-        public Task<Mdl> Update([FromBody]Mdl value)
+        public virtual Task<Mdl> Update([FromBody]Mdl value)
         {
             return repository.Update(value);
         }
 
         // PUT api/<controller>/5
-        [HttpPut("{lookup}")]
-        public Task<Mdl> Put(Lkup lookup, [FromBody]Mdl value)
+        [HttpPut]
+        public virtual Task<Mdl> Put([FromBody]Mdl value)
         {
             return repository.Create(value);
         }
 
         // DELETE api/<controller>/5
-        [HttpDelete("{lookup}")]
-        public Task<bool> Delete(Lkup lookup)
+        [HttpDelete]
+        public virtual Task<bool> Delete([FromBody] Lkup lookup)
         {
             return repository.Delete(lookup);
         }

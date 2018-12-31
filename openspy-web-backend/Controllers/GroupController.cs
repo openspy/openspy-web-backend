@@ -20,6 +20,18 @@ namespace CoreWeb.Controllers
         }
         [HttpPost("lookup")]
         [Authorize(Policy = "CoreService")]
-        public new Task<IEnumerable<Group>> Get([FromBody] GroupLookup lookup) => base.Get(lookup);
+        public override Task<IEnumerable<Group>> Get([FromBody] GroupLookup lookup) => base.Get(lookup);
+
+        [HttpPost]
+        [Authorize(Policy = "GroupManage")]
+        public override Task<Group> Update([FromBody]Group value) => base.Update(value);
+
+        [HttpPut]
+        [Authorize(Policy = "GroupManage")]
+        public override Task<Group> Put([FromBody]Group value) => base.Put(value);
+
+        [HttpDelete]
+        [Authorize(Policy = "GroupManage")]
+        public override Task<bool> Delete([FromBody]GroupLookup value) => base.Delete(value);
     }
 }

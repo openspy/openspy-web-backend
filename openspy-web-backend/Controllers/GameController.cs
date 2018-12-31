@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers
 {
-    [Authorize(Policy = "GameManage")]
     public class GameController : ModelController<Game, GameLookup>
     {
         public GameController(IRepository<Game, GameLookup> repository) : base(repository)
@@ -20,6 +19,18 @@ namespace CoreWeb.Controllers
         }
         [HttpPost("lookup")]
         [Authorize(Policy = "CoreService")]
-        public new Task<IEnumerable<Game>> Get([FromBody] GameLookup lookup) => base.Get(lookup);
+        public override Task<IEnumerable<Game>> Get([FromBody] GameLookup lookup) => base.Get(lookup);
+
+        [HttpPost]
+        [Authorize(Policy = "GameManage")]
+        public override Task<Game> Update([FromBody]Game value) => base.Update(value);
+
+        [HttpPut]
+        [Authorize(Policy = "GameManage")]
+        public override Task<Game> Put([FromBody]Game value) => base.Put(value);
+
+        [HttpDelete]
+        [Authorize(Policy = "GameManage")]
+        public override Task<bool> Delete([FromBody]GameLookup value) => base.Delete(value);
     }
 }

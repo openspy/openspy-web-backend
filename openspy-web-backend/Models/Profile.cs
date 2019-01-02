@@ -10,10 +10,11 @@ namespace CoreWeb.Models
     public class ProfileLookup
     {
         public int? id;
-        public int? userId;
         public String nick;
         public String uniquenick;
         public int? namespaceid;
+        public int? userId;
+        public int? partnercode;
     };
 
     public class Profile

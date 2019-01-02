@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace CoreWeb.Models
@@ -21,6 +22,7 @@ namespace CoreWeb.Models
 
         public int Id { get; set; }
         public string Email { get; set; }
+        [JsonIgnoreAttribute]
         public string Password { get; set; }
         public int? Videocard1ram { get; set; }
         public int? Videocard2ram { get; set; }

@@ -22,6 +22,7 @@ namespace CoreWeb.Repository
     public class Session
     {
         public Profile profile;
+        public User user;
         public TimeSpan ?expiresIn;
         public DateTime? expiresAt;
         public String sessionKey;
@@ -72,14 +73,29 @@ namespace CoreWeb.Repository
                     {
                         redis.SetEntryInHash(session_key, "profileid", model.profile.Id.ToString());
                         redis.SetEntryInHash(session_key, "userid", model.profile.Userid.ToString());
-                    } else
+                    }
+                    else if (model.user != null)
+                    {
+                        UserLookup userLookup = new UserLookup();
+                        if(model.user.Id != 0)
+                        {
+                            userLookup.id = model.user.Id;
+                            redis.SetEntryInHash(session_key, "userid", model.user.Id.ToString());
+                        }                        
+                        session.user = (await this.userRepository.Lookup(userLookup)).ToList().First();
+                    }
+                    else
                     {
                         throw new ArgumentException();
                     }
 
-                    ProfileLookup lookup = new ProfileLookup();
-                    lookup.id = model.profile.Id;
-                    session.profile = (await this.profileRepository.Lookup(lookup)).ToList().First();
+                    if(model.profile != null)
+                    {
+                        ProfileLookup lookup = new ProfileLookup();
+                        lookup.id = model.profile.Id;
+                        session.profile = (await this.profileRepository.Lookup(lookup)).ToList().First();
+                    }
+                    
                     session.expiresIn = model.expiresIn ?? this.defaultTimeSpan;
                     session.expiresAt = DateTime.Now.Add(model.expiresIn ?? this.defaultTimeSpan);
                     session.sessionKey = session_key;

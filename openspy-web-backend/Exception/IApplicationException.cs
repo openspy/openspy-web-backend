@@ -9,6 +9,7 @@ namespace CoreWeb.Exception
     {
         public String _class;
         public String _name;
+        public Dictionary<String, String> _extra;
         public IApplicationException(String _class, String _name) : base(_name)
         {
             this._class = _class;

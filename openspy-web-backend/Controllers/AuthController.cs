@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using CoreWeb.Models;
 using CoreWeb.Repository;
 using CoreWeb.Exception;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers
 {
+    [Authorize(Policy = "UserAuth")]
     [Route("v1/[controller]")]
     [ApiController]
     public class AuthController : Controller

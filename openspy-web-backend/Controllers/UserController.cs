@@ -27,7 +27,7 @@ namespace CoreWeb.Controllers
         {
             public Profile profile;
             public User user;
-
+            public String password;
         };
         public class RegisterResponse
         {
@@ -35,49 +35,66 @@ namespace CoreWeb.Controllers
             public Profile profile;
         };
 
+        /// <summary>
+        /// Registers a user, and creats a profile if supplied. If user already exists, and supplied password matches, profile is created if not already existing.
+        /// </summary>
+        /// <param name="register"></param>
+        /// <returns></returns>
         [HttpPost("register")]
+        [Authorize(Policy = "UserRegister")]
         public async Task<RegisterResponse> PerformRegister([FromBody] RegisterRequest register)
         {
             RegisterResponse response = new RegisterResponse();
+
+            int? profileId = null, userId = null;
+
+            //check for email conflicts in partnercode
+            UserLookup user = new UserLookup();
+            user.email = register.user.Email;
+            user.partnercode = register.user.Partnercode;
+            User userModel = (await userRepository.Lookup(user)).FirstOrDefault();
+
             //if uniquenick set, check for uniquenick conflictss in namespaceid
             if (register.profile.Uniquenick.Length != 0)
             {
                 var checkData = await profileRepository.CheckUniqueNickInUse(register.profile.Uniquenick, register.profile.Namespaceid, register.user.Partnercode);
                 if (checkData.Item1)
                 {
-                    throw new UniqueNickInUseException(checkData.Item2); //TODO: unique nick in use exception
+                    if (userModel.Password.CompareTo(register.password) == 0)
+                    {
+                        profileId = checkData.Item2;
+                        userId = checkData.Item3;
+                    }
+                    throw new UniqueNickInUseException(profileId); //TODO: unique nick in use exception
                 }
             }
 
-
-            //check for email conflicts in partnercode
-            UserLookup user = new UserLookup();
-            user.email = register.user.Email;
-            user.partnercode = register.user.Partnercode;
-            User userModel = (await userRepository.Lookup(user)).First();
-            if(userModel != null)
+            if (userModel != null)
             {
-                int ?profileid = null;
-                if(userModel.Password.CompareTo(register.user.Password) == 0)
+                if ((userId.HasValue && userId.Value != userModel.Id) || userModel.Password.CompareTo(register.password) != 0)
                 {
-                    profileid = register.profile.Id;
+                    throw new UserExistsException(); //user exist... need to throw profileid due to GP
                 }
-                throw new UniqueNickInUseException(profileid); //user doesn't exist... need to throw profileid due to GP
             }
 
             //if OK, create user, and profile
             userModel = new User();
             userModel.Email = register.user.Email;
             userModel.Partnercode = register.user.Partnercode;
+            userModel.Password = register.password;
 
             response.user = (await userRepository.Create(userModel));
 
-            Profile profileModel = new Profile();
-            profileModel = register.profile;
+            if (register.profile != null)
+            {
+                Profile profileModel = new Profile();
+                profileModel = register.profile;
 
-            profileModel = await profileRepository.Create(profileModel);
+                profileModel.Userid = response.user.Id;
+                profileModel = await profileRepository.Create(profileModel);
 
-            response.profile = profileModel;
+                response.profile = profileModel;
+            }
 
             //send registration email
 

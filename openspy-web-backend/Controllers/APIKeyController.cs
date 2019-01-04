@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CoreWeb.Crypto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -17,6 +18,7 @@ namespace CoreWeb.Controllers
         public List<string> roles;
         public int? expiresInSecs;
     }
+    [Authorize(Policy = "APIKeyManage")]
     [Route("api/[controller]")]
     public class APIKeyController : Controller
     {

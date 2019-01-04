@@ -17,26 +17,26 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<Profile>> Lookup(ProfileLookup lookup)
         {
-            var query = gameTrackerDb.Profile;
+            var query = gameTrackerDb.Profile as IQueryable<Profile>;
             if (lookup.id.HasValue)
             {
-                query.Where(b => b.Id == lookup.id.Value);
+                query = query.Where(b => b.Id == lookup.id.Value);
             }
             if(lookup.userId.HasValue)
             {
-                query.Where(b => b.Userid == lookup.userId.Value);
+                query = query.Where(b => b.Userid == lookup.userId.Value);
             }
             if (lookup.namespaceid.HasValue)
             {
-                query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
+                query = query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
             }
             if (lookup.uniquenick != null)
             {
-                query.Where(b => b.Uniquenick == lookup.uniquenick);
+                query = query.Where(b => b.Uniquenick == lookup.uniquenick);
             }
             if(lookup.partnercode.HasValue)
             {
-                query.Where(b => b.User.Partnercode == lookup.partnercode.Value);
+                query = query.Where(b => b.User.Partnercode == lookup.partnercode.Value);
             }
             return await query.ToListAsync();
         }
@@ -64,19 +64,16 @@ namespace CoreWeb.Repository
         }
         public async Task<Profile> Create(Profile model)
         {
-            var entry = await gameTrackerDb.AddAsync<Profile>(model);
-            var num_modified = await gameTrackerDb.SaveChangesAsync();
+            var entry = gameTrackerDb.Add(model);
+            var num_modified = await gameTrackerDb.SaveChangesAsync(true);
             return entry.Entity;
         }
 
-        public async Task<ValueTuple<bool, int>> CheckUniqueNickInUse(string uniquenick, int? namespaceid, int ?partnercode)
+        public async Task<ValueTuple<bool, int, int>> CheckUniqueNickInUse(string uniquenick, int? namespaceid, int ?partnercode)
         {
-
-            ValueTuple<bool, int> ret = new ValueTuple<bool, int>(false, 0);
+            ValueTuple<bool, int, int> ret = new ValueTuple<bool, int, int>(false, 0, 0);
             if (!namespaceid.HasValue || namespaceid.Value == 0)
             {
-                ret.Item1 = false;
-                ret.Item2 = 0;
                 return ret;
             }
 
@@ -84,16 +81,14 @@ namespace CoreWeb.Repository
             profileLookup.uniquenick = uniquenick;
             profileLookup.namespaceid = namespaceid;
             profileLookup.partnercode = partnercode;
-            var profile = (await Lookup(profileLookup)).First();
+            var profile = (await Lookup(profileLookup)).FirstOrDefault();
 
-            if(profile != null)
+            if (profile != null)
             {
+                UserLookup userLookup = new UserLookup();
                 ret.Item1 = true;
                 ret.Item2 = profile.Id;
-            } else
-            {
-                ret.Item1 = false;
-                ret.Item2 = 0;
+                ret.Item3 = profile.Userid;
             }
             return ret;
         }

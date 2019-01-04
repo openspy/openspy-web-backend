@@ -340,9 +340,9 @@ namespace CoreWeb.Database
                     .HasColumnName("password")
                     .HasMaxLength(51);
 
-                entity.Property(e => e.Publicmask)
+                /*entity.Property(e => e.Publicmask)
                     .HasColumnName("publicmask")
-                    .HasDefaultValueSql("'0'");
+                    .HasDefaultValueSql("'0'");*/
 
                 entity.Property(e => e.Videocard1ram)
                     .HasColumnName("videocard1ram")

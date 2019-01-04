@@ -22,15 +22,12 @@ namespace CoreWeb.Controllers
         public override Task<IEnumerable<Game>> Get([FromBody] GameLookup lookup) => base.Get(lookup);
 
         [HttpPost]
-        [Authorize(Policy = "GameManage")]
         public override Task<Game> Update([FromBody]Game value) => base.Update(value);
 
         [HttpPut]
-        [Authorize(Policy = "GameManage")]
         public override Task<Game> Put([FromBody]Game value) => base.Put(value);
 
         [HttpDelete]
-        [Authorize(Policy = "GameManage")]
         public override Task<bool> Delete([FromBody]GameLookup value) => base.Delete(value);
     }
 }

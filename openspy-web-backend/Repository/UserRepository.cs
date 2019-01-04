@@ -17,18 +17,18 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<User>> Lookup(UserLookup lookup)
         {
-            var query = gameTrackerDb.User;
+            var query = gameTrackerDb.User as IQueryable<User>;
             if (lookup.id.HasValue)
             {
-                query.Where(b => b.Id == lookup.id.Value);
+                query = query.Where(b => b.Id == lookup.id.Value);
             }
             if (lookup.email != null)
             {
-                query.Where(b => b.Email == lookup.email);
+                query = query.Where(b => b.Email == lookup.email);
             }
             if(lookup.partnercode.HasValue)
             {
-                query.Where(b => b.Partnercode == lookup.partnercode.Value);
+                query = query.Where(b => b.Partnercode == lookup.partnercode.Value);
             }
             return await query.ToListAsync();
         }
@@ -57,7 +57,7 @@ namespace CoreWeb.Repository
         public async Task<User> Create(User model)
         {
             var entry = await gameTrackerDb.AddAsync<User>(model);
-            var num_modified = await gameTrackerDb.SaveChangesAsync();
+            var num_modified = await gameTrackerDb.SaveChangesAsync(true);
             return entry.Entity;
         }
     }

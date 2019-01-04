@@ -34,9 +34,9 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<Block>> Lookup(BuddyLookup lookup)
         {
-            var query = gameTrackerDb.Block;
+            var query = gameTrackerDb.Block as IQueryable<Block>;
             var from_profile = (await this.profileRepository.Lookup(lookup.SourceProfile)).First();
-            query.Where(b => b.FromProfileid == from_profile.Id);
+            query = query.Where(b => b.FromProfileid == from_profile.Id);
             return await query.ToListAsync();
         }
         public Task<bool> Delete(BuddyLookup lookup)

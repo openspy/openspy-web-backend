@@ -49,12 +49,26 @@ namespace CoreWeb
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Presence"));
                 }));
+
+                options.AddPolicy("UserRegister", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "UserRegister"));
+                }));
+
+                options.AddPolicy("UserAuth", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "UserAuth"));
+                }));
+
+                options.AddPolicy("APIKeyManage", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin"));
+                }));
             });
             services.AddAuthentication("ApiKeyAuth").AddScheme<ApiKeyAuthOpts, ApiKeyAuthHandler>("ApiKeyAuth", "ApiKeyAuth", opts => { });
 
             services.AddMvc(opt =>
             {
-                //opt.UseCentralRoutePrefix(new RouteAttribute("v1"));
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
             .AddJsonOptions(options =>

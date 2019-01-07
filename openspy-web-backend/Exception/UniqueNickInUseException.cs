@@ -7,10 +7,16 @@ namespace CoreWeb.Exception
 {
     public class UniqueNickInUseException : IApplicationException
     {
-        public int ?profileId;
-        public UniqueNickInUseException(int ?profileId) : base("profile", "UniqueNickInUse")
+        public UniqueNickInUseException(int ?profileId, int ?userId = null) : base("profile", "UniqueNickInUse")
         {
-            this.profileId = profileId;
+            if(profileId.HasValue)
+            {
+                extraData["profileid"] = profileId.Value;
+            }
+            if(userId.HasValue)
+            {
+                extraData["userid"] = userId.Value;
+            }
         }
     }
 }

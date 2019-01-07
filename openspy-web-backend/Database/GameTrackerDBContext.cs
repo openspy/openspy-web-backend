@@ -322,6 +322,10 @@ namespace CoreWeb.Database
                     .HasColumnName("email")
                     .HasMaxLength(51);
 
+                entity.Property(e => e.Password)
+                    .HasColumnName("password")
+                    .HasMaxLength(51);
+
                 entity.Property(e => e.EmailVerified)
                     .HasColumnName("email_verified")
                     .HasColumnType("tinyint(1)")
@@ -336,13 +340,9 @@ namespace CoreWeb.Database
                     .HasColumnType("int(11)")
                     .HasDefaultValueSql("'0'");
 
-                entity.Property(e => e.Password)
-                    .HasColumnName("password")
-                    .HasMaxLength(51);
-
-                /*entity.Property(e => e.Publicmask)
+                entity.Property(e => e.Publicmask)
                     .HasColumnName("publicmask")
-                    .HasDefaultValueSql("'0'");*/
+                    .HasDefaultValueSql("'0'");
 
                 entity.Property(e => e.Videocard1ram)
                     .HasColumnName("videocard1ram")

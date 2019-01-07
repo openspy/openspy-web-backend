@@ -1,5 +1,4 @@
-﻿using CoreWeb.Controllers.Presence;
-using CoreWeb.Database;
+﻿using CoreWeb.Database;
 using CoreWeb.Models;
 using ServiceStack.Redis;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +22,7 @@ namespace CoreWeb.Repository
         private String GP_BUDDY_ROUTING_KEY;
         private TimeSpan BUDDY_ADDREQ_EXPIRETIME;
 
-        public BuddyRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRedisClientsManager redisClientManager, IMQConnectionFactory connectionFactory)
+        public BuddyRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRedisClientsManager redisClientManager, IMQConnectionFactory connectionFactory)
         {
             GP_EXCHANGE = "presence.core";
             GP_BUDDY_ROUTING_KEY = "presence.buddies";

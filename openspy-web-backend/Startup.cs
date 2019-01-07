@@ -17,6 +17,8 @@ using ServiceStack.Redis;
 using System.Security.Principal;
 using CoreWeb.Authentication;
 using CoreWeb.Crypto;
+using System.Reflection;
+using System.IO;
 
 namespace CoreWeb
 {
@@ -34,8 +36,14 @@ namespace CoreWeb
         {
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("CoreService", policy => policy.RequireClaim("role", "CoreService"));
-                options.AddPolicy("Presence", policy => policy.RequireClaim("role", "Presence"));
+                options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
+                }));
+                options.AddPolicy("Presence", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Presence"));
+                }));
 
                 options.AddPolicy("GameManage", policy => policy.RequireClaim("role", "Admin"));
                 options.AddPolicy("GroupManage", policy => policy.RequireClaim("role", "Admin"));
@@ -86,6 +94,10 @@ namespace CoreWeb
             services.AddScoped<IRepository<Game, GameLookup>, GameRepository>();
             services.AddScoped<IRepository<Group, GroupLookup>, GroupRepository>();
             services.AddScoped<IRepository<Session, SessionLookup>, AuthSessionRepository>();
+            services.AddScoped<IRepository<Buddy, BuddyLookup>, BuddyRepository>();
+            services.AddScoped<IRepository<Block, BuddyLookup>, BlockRepository>();
+            services.AddScoped<IRepository<PresenceProfileStatus, PresenceProfileLookup>, PresenceProfileStatusRepository>();
+            //IRepository<PresenceProfileStatus, PresenceProfileLookup> profileStatusRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
 
 
@@ -101,7 +113,13 @@ namespace CoreWeb
                 c.AddSecurityDefinition("Bearer", new ApiKeyScheme { In = "header", Description = "Please enter your API Key", Name = "APIKey", Type = "apiKey" });
                 c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>> { { "Bearer", Enumerable.Empty<string>() }});
                 c.CustomSchemaIds(x => x.FullName);
+
+                // Set the comments path for the Swagger JSON and UI.
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
             });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

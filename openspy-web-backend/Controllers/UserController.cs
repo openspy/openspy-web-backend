@@ -38,7 +38,7 @@ namespace CoreWeb.Controllers
         /// <summary>
         /// Registers a user, and creats a profile if supplied. If user already exists, and supplied password matches, profile is created if not already existing.
         /// </summary>
-        /// <param name="register"></param>
+        /// <param name="register">Register data</param>
         /// <returns></returns>
         [HttpPost("register")]
         [Authorize(Policy = "UserRegister")]
@@ -55,7 +55,7 @@ namespace CoreWeb.Controllers
             User userModel = (await userRepository.Lookup(user)).FirstOrDefault();
 
             //if uniquenick set, check for uniquenick conflictss in namespaceid
-            if (register.profile.Uniquenick.Length != 0)
+            if (register.profile.Uniquenick.Length != 0 && userModel != null)
             {
                 var checkData = await profileRepository.CheckUniqueNickInUse(register.profile.Uniquenick, register.profile.Namespaceid, register.user.Partnercode);
                 if (checkData.Item1)
@@ -64,18 +64,21 @@ namespace CoreWeb.Controllers
                     {
                         profileId = checkData.Item2;
                         userId = checkData.Item3;
+                        throw new UniqueNickInUseException(profileId, userId);
+                    } else
+                    {
+                        throw new UserExistsException(userModel); //user exist... need to throw profileid due to GP
                     }
-                    throw new UniqueNickInUseException(profileId); //TODO: unique nick in use exception
                 }
             }
 
-            if (userModel != null)
+            /*if (userModel != null)
             {
                 if ((userId.HasValue && userId.Value != userModel.Id) || userModel.Password.CompareTo(register.password) != 0)
                 {
-                    throw new UserExistsException(); //user exist... need to throw profileid due to GP
+                    throw new UserExistsException(userModel); //user exist... need to throw profileid due to GP
                 }
-            }
+            }*/
 
             //if OK, create user, and profile
             userModel = new User();

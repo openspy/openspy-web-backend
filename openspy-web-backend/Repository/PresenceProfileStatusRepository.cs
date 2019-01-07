@@ -48,6 +48,7 @@ namespace CoreWeb.Repository
             uint.TryParse(redis.GetValueFromHash(redis_hash_key, "quiet_flags"), out status.quietFlags);
             status.statusText = redis.GetValueFromHash(redis_hash_key, "status_string");
             status.locationText = redis.GetValueFromHash(redis_hash_key, "location_string");
+            status.profile = profile;
             return status;
         }
         public async Task<bool> Delete(PresenceProfileLookup lookup)
@@ -76,9 +77,7 @@ namespace CoreWeb.Repository
         }
         public async Task<PresenceProfileStatus> Update(PresenceProfileStatus model)
         {
-            ProfileLookup lookup = new ProfileLookup();
-            lookup.id = model.profile.Id;
-            var to_profile = (await this.profileRepository.Lookup(lookup)).First();
+            var to_profile = (await this.profileRepository.Lookup(model.profileLookup)).FirstOrDefault();
 
             using (IRedisClient redis = redisClientManager.GetClient())
             {

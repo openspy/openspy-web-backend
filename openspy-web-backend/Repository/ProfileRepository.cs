@@ -30,6 +30,10 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
             }
+            if (lookup.nick != null)
+            {
+                query = query.Where(b => b.Nick == lookup.nick);
+            }
             if (lookup.uniquenick != null)
             {
                 query = query.Where(b => b.Uniquenick == lookup.uniquenick);

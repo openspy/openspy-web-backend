@@ -10,9 +10,10 @@ public class JsonExceptionFilter : IExceptionFilter
         if (context.Exception.GetType().IsSubclassOf(typeof(IApplicationException)))
         {
             IApplicationException exception = (IApplicationException)context.Exception;
-            Dictionary<string, string> error = new Dictionary<string, string>();
+            Dictionary<string, object> error = new Dictionary<string, object>();
             error["class"] = exception._class;
             error["name"] = exception._name;
+            error["extra"] = exception.extraData;
             context.Result = new ObjectResult(new { error });
         } else
         {

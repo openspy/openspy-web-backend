@@ -51,7 +51,7 @@ namespace CoreWeb.Controllers.Presence
             return list.First();
         }
 
-        [HttpPut("SetStatus")]
+        [HttpPost("SetStatus")]
         public Task<PresenceProfileStatus> SetStatus([FromBody] PresenceProfileStatus profileLookup)
         {
             return profileStatusRepository.Update(profileLookup);

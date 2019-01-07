@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,9 @@ namespace CoreWeb.Models
     };
     public class PresenceProfileStatus
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ProfileLookup profileLookup;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Profile profile;
         public String IP;
         public UInt16 Port;

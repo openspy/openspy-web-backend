@@ -47,6 +47,7 @@ namespace CoreWeb.Controllers.Presence
     public class AuthResponse
     {
         public Profile profile;
+        public User user;
         public String server_response;
         public String session_key;
         public bool success;
@@ -85,7 +86,7 @@ namespace CoreWeb.Controllers.Presence
         public async Task<GenAuthTicketResponse> GenAuthTicket([FromBody] AuthRequest authRequest)
         {
             GenAuthTicketResponse response = new GenAuthTicketResponse();
-            var profile = (await profileRepository.Lookup(authRequest.profile)).First();
+            var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
             if (profile == null) throw new AuthNoSuchUserException();
 
             DateTime expiresAt = DateTime.Now.AddDays(1);
@@ -165,14 +166,22 @@ namespace CoreWeb.Controllers.Presence
         private async Task<AuthResponse> handleAuthRequest(AuthRequest authRequest, ProofType type)
         {
             AuthResponse response = new AuthResponse();
-            var user = (await userRepository.Lookup(authRequest.user)).First();
-            if (user == null) throw new AuthNoSuchUserException();
-            if (authRequest.profile != null)
+
+            if(authRequest.user != null)
             {
-                authRequest.profile.userId = user.Id;
+                var user = (await userRepository.Lookup(authRequest.user)).FirstOrDefault();
+                if (user == null) throw new AuthNoSuchUserException();
+                if (authRequest.profile != null)
+                {
+                    authRequest.profile.userId = user.Id;
+                }
             }
-            var profile = (await profileRepository.Lookup(authRequest.profile)).First();
+            var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
             if (profile == null) throw new AuthNoSuchUserException();
+
+            UserLookup lookup = new UserLookup();
+            lookup.id = profile.Userid;
+            profile.User = profile.User ?? (await userRepository.Lookup(lookup)).FirstOrDefault(); ;
 
             String client_proof = GetPasswordProof(profile, authRequest, type, true);
 
@@ -184,6 +193,7 @@ namespace CoreWeb.Controllers.Presence
 
             response.server_response = GetPasswordProof(profile, authRequest, type, false);
             response.profile = profile;
+            response.user = profile.User;
             response.session_key = await generateSessionKey(profile);
             response.success = true;
             return response;

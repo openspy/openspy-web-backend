@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -50,13 +51,20 @@ namespace CoreWeb.Models
         public System.Int16 Deleted { get; set; }
         public System.Int16 Admin { get; set; }
 
+        [JsonIgnoreAttribute]
         public User User { get; set; }
 
+        [JsonIgnoreAttribute]
         public ICollection<Block> BlocksFromProfile { get; set; }
+        [JsonIgnoreAttribute]
         public ICollection<Block> BlocksToProfile { get; set; }
+        [JsonIgnoreAttribute]
         public ICollection<Buddy> BuddiesFromProfile { get; set; }
+        [JsonIgnoreAttribute]
         public ICollection<Buddy> BuddiesToProfile { get; set; }
+        [JsonIgnoreAttribute]
         public ICollection<PersistData> PersistData { get; set; }
+        [JsonIgnoreAttribute]
         public ICollection<PersistKeyedData> PersistKeyedData { get; set; }
     }
 }

@@ -13,20 +13,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers.Presence
 {
-    public class BuddyLookup {
-        public ProfileLookup SourceProfile;
-        public ProfileLookup TargetProfile;
-        public bool? reverseLookup;
-        public String addReason;
-        public bool? silent;
-    };
-    public class SendMessageRequest
-    {
-        public BuddyLookup lookup;
-        public String message;
-        public int type;
-        public System.DateTime? time;
-    };
     [Route("v1/Presence/[controller]")]
     [ApiController]
     [Authorize(Policy = "Presence")]
@@ -107,7 +93,7 @@ namespace CoreWeb.Controllers.Presence
 
         }
 
-        [HttpPost("Buddy")]
+        [HttpPost("LookupBuddy")]
         public async Task<List<Profile>> GetBuddies([FromBody] BuddyLookup lookupData)
         {
             var buddies = (await buddyRepository.Lookup(lookupData)).ToList();
@@ -124,7 +110,7 @@ namespace CoreWeb.Controllers.Presence
             return profiles;
         }
 
-        [HttpPost("Block")]
+        [HttpPost("LookupBlock")]
         public async Task<List<Profile>> GetBlocks([FromBody] BuddyLookup lookupData)
         {
             var blocks = (await blockRepository.Lookup(lookupData)).ToList();
@@ -143,7 +129,7 @@ namespace CoreWeb.Controllers.Presence
             return profiles;
         }
 
-        [HttpPost("Message")]
+        [HttpPost("SendMessage")]
         public bool SendMessage([FromBody] SendMessageRequest messageData)
         {
             buddyRepository.SendMessage(messageData);

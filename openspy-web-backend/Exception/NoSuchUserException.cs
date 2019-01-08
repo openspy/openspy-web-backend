@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace CoreWeb.Exception
 {
-    public class AuthNoSuchUserException : IApplicationException
+    public class NoSuchUserException : IApplicationException
     {
-        public AuthNoSuchUserException() : base("auth", "NoSuchUser")
+        public NoSuchUserException() : base("common", "NoSuchUser")
         {
         }
     }

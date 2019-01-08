@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CoreWeb.Database;
+using CoreWeb.Exception;
 using CoreWeb.Models;
 using RabbitMQ.Client;
 using ServiceStack.Redis;
+using CoreWeb.Exception;
 
 namespace CoreWeb.Repository
 {
@@ -14,31 +16,67 @@ namespace CoreWeb.Repository
         private IRedisClientsManager redisClientManager;
         private IMQConnectionFactory connectionFactory;
         private IRepository<Profile, ProfileLookup> profileRepository;
+        private IRepository<User, UserLookup> userRepository;
+        private IRepository<Buddy, BuddyLookup> buddyLookup;
+        private IRepository<Block, BuddyLookup> blockLookup;
         private int PRESENCE_STATUS_REDISDB;
         private String GP_EXCHANGE;
         private String GP_BUDDY_ROUTING_KEY;
-        public PresenceProfileStatusRepository(IRedisClientsManager redisClientManager, IRepository<Profile, ProfileLookup> profileRepository, IMQConnectionFactory connectionFactory)
+        public PresenceProfileStatusRepository(IRedisClientsManager redisClientManager, IRepository<Profile, ProfileLookup> profileRepository, IMQConnectionFactory connectionFactory, IRepository<User, UserLookup> userRepository, IRepository<Buddy, BuddyLookup> buddyLookup, IRepository<Block, BuddyLookup> blockLookup)
         {
             PRESENCE_STATUS_REDISDB = 5;
             GP_EXCHANGE = "presence.core";
             GP_BUDDY_ROUTING_KEY = "presence.buddies";
             this.profileRepository = profileRepository;
+            this.userRepository = userRepository;
+            this.buddyLookup = buddyLookup;
+            this.blockLookup = blockLookup;
             this.redisClientManager = redisClientManager;
             this.connectionFactory = connectionFactory;
         }
         public async Task<IEnumerable<PresenceProfileStatus>> Lookup(PresenceProfileLookup lookup)
         {
+            var is_buddy_lookup = lookup.buddyLookup.HasValue && lookup.buddyLookup.Value;
+            var is_block_lookup = lookup.blockLookup.HasValue && lookup.blockLookup.Value;
+            var is_reverse_lookup = lookup.reverseLookup.HasValue && lookup.reverseLookup.Value;
+
+            var to_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
+            if (to_profile == null) throw new NoSuchUserException();
+
             List<PresenceProfileStatus> list = new List<PresenceProfileStatus>();
             using (IRedisClient redis = redisClientManager.GetClient())
             {
                 redis.Db = PRESENCE_STATUS_REDISDB;
                 PresenceProfileStatus status = new PresenceProfileStatus();
-                var to_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).First();
-                list.Add(GetStatusFromProfile(to_profile, redis));
+                if(!is_buddy_lookup && !is_block_lookup)
+                {
+                    list.Add(await GetStatusFromProfile(to_profile, redis));
+                }
+                else if (is_buddy_lookup)
+                {
+                    BuddyLookup buddyLookup = new BuddyLookup();
+                    buddyLookup.SourceProfile = lookup.profileLookup;
+                    var buddies = (await this.buddyLookup.Lookup(buddyLookup));
+                    foreach (var buddy in buddies)
+                    {
+                        list.Add(await GetStatusFromProfile(buddy.ToProfile, redis));
+                    }
+                }
+                else if (is_block_lookup)
+                {
+                    BuddyLookup buddyLookup = new BuddyLookup();
+                    buddyLookup.SourceProfile = lookup.profileLookup;
+                    var buddies = (await this.blockLookup.Lookup(buddyLookup));
+                    foreach (var buddy in buddies)
+                    {
+                        list.Add(await GetStatusFromProfile(buddy.ToProfile, redis));
+                    }
+                }
+
             }
             return list;
         }
-        private PresenceProfileStatus GetStatusFromProfile(Profile profile, IRedisClient redis)
+        private async Task<PresenceProfileStatus> GetStatusFromProfile(Profile profile, IRedisClient redis)
         {
             PresenceProfileStatus status = new PresenceProfileStatus();
             var redis_hash_key = "status_" + profile.Id;
@@ -49,11 +87,17 @@ namespace CoreWeb.Repository
             status.statusText = redis.GetValueFromHash(redis_hash_key, "status_string");
             status.locationText = redis.GetValueFromHash(redis_hash_key, "location_string");
             status.profile = profile;
+
+            var userLookup = new UserLookup();
+            userLookup.id = profile.Userid;
+            var user = (await this.userRepository.Lookup(userLookup)).FirstOrDefault();
+            status.user = user;
             return status;
         }
         public async Task<bool> Delete(PresenceProfileLookup lookup)
         {
-            var to_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).First();
+            var to_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
+            if (to_profile == null) return false;
             var redis_hash_key = "status_" + to_profile.Id;
             using (IRedisClient redis = redisClientManager.GetClient())
             {
@@ -78,7 +122,7 @@ namespace CoreWeb.Repository
         public async Task<PresenceProfileStatus> Update(PresenceProfileStatus model)
         {
             var to_profile = (await this.profileRepository.Lookup(model.profileLookup)).FirstOrDefault();
-
+            if (to_profile == null) throw new NoSuchUserException();
             using (IRedisClient redis = redisClientManager.GetClient())
             {
                 redis.Db = PRESENCE_STATUS_REDISDB;

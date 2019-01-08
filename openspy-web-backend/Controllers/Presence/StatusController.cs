@@ -7,9 +7,17 @@ using CoreWeb.Repository;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
+using CoreWeb.Exception;
 
 namespace CoreWeb.Controllers.Presence
 {
+
+    public class BuddyLookupRequest
+    {
+        public ProfileLookup profileLookup;
+        public bool? reverse;
+    }
+
     [Route("v1/Presence/[controller]")]
     [ApiController]
     [Authorize(Policy = "Presence")]
@@ -25,20 +33,20 @@ namespace CoreWeb.Controllers.Presence
             this.blockRepository = blockRepository;
         }
         [HttpPost("FindBuddyStatuses")]
-        public Task<IEnumerable<PresenceProfileStatus>> FindBuddyStatuses([FromBody] ProfileLookup profileLookup)
+        public Task<IEnumerable<PresenceProfileStatus>> FindBuddyStatuses([FromBody] BuddyLookupRequest buddyLookup)
         {
             PresenceProfileLookup lookup = new PresenceProfileLookup();
             lookup.buddyLookup = true;
-            lookup.profileLookup = profileLookup;
+            lookup.profileLookup = buddyLookup.profileLookup;
             return profileStatusRepository.Lookup(lookup);
         }
 
         [HttpPost("FindBlockStatuses")]
-        public Task<IEnumerable<PresenceProfileStatus>> FindBlockStatuses([FromBody] ProfileLookup profileLookup)
+        public Task<IEnumerable<PresenceProfileStatus>> FindBlockStatuses([FromBody] BuddyLookupRequest buddyLookup)
         {
             PresenceProfileLookup lookup = new PresenceProfileLookup();
             lookup.blockLookup = true;
-            lookup.profileLookup = profileLookup;
+            lookup.profileLookup = buddyLookup.profileLookup;
             return profileStatusRepository.Lookup(lookup);
         }
 
@@ -47,8 +55,9 @@ namespace CoreWeb.Controllers.Presence
         {
             PresenceProfileLookup lookup = new PresenceProfileLookup();
             lookup.profileLookup = profileLookup;
-            List<PresenceProfileStatus> list = (await profileStatusRepository.Lookup(lookup)).ToList();
-            return list.First();
+            PresenceProfileStatus status = (await profileStatusRepository.Lookup(lookup)).FirstOrDefault();
+            if (status == null) throw new NoSuchUserException();
+            return status;
         }
 
         [HttpPost("SetStatus")]

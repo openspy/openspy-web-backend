@@ -54,13 +54,13 @@ namespace CoreWeb.Controllers
                     request.profileLookup.userId = user.Id;
                 }
             }
-            if (user == null) throw new AuthNoSuchUserException();
+            if (user == null) throw new NoSuchUserException();
 
             Profile profile = null;
             if(request.profileLookup != null)
             {
                 profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
-                if (profile == null) throw new AuthNoSuchUserException();
+                if (profile == null) throw new NoSuchUserException();
 
                 if(request.userLookup == null)
                 {

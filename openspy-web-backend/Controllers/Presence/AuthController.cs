@@ -87,7 +87,7 @@ namespace CoreWeb.Controllers.Presence
         {
             GenAuthTicketResponse response = new GenAuthTicketResponse();
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
-            if (profile == null) throw new AuthNoSuchUserException();
+            if (profile == null) throw new NoSuchUserException();
 
             DateTime expiresAt = DateTime.Now.AddDays(1);
 
@@ -170,14 +170,14 @@ namespace CoreWeb.Controllers.Presence
             if(authRequest.user != null)
             {
                 var user = (await userRepository.Lookup(authRequest.user)).FirstOrDefault();
-                if (user == null) throw new AuthNoSuchUserException();
+                if (user == null) throw new NoSuchUserException();
                 if (authRequest.profile != null)
                 {
                     authRequest.profile.userId = user.Id;
                 }
             }
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
-            if (profile == null) throw new AuthNoSuchUserException();
+            if (profile == null) throw new NoSuchUserException();
 
             UserLookup lookup = new UserLookup();
             lookup.id = profile.Userid;

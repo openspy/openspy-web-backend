@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using RabbitMQ.Client;
+using CoreWeb.Exception;
 
 namespace CoreWeb.Repository
 {
@@ -164,9 +165,12 @@ namespace CoreWeb.Repository
 
         public async void SendMessage(SendMessageRequest messageData)
         {
+            //TODO: check if user is online... if not save and send on next login
             ConnectionFactory factory = connectionFactory.Get();
-            var from_profile = (await profileRepository.Lookup(messageData.lookup.SourceProfile)).First();
-            var to_profile = (await profileRepository.Lookup(messageData.lookup.TargetProfile)).First();
+            var from_profile = (await profileRepository.Lookup(messageData.lookup.SourceProfile)).FirstOrDefault();
+            var to_profile = (await profileRepository.Lookup(messageData.lookup.TargetProfile)).FirstOrDefault();
+
+            if (from_profile == null|| to_profile == null) throw new NoSuchUserException();
             using (IConnection connection = factory.CreateConnection())
             {
                 using (IModel channel = connection.CreateModel())

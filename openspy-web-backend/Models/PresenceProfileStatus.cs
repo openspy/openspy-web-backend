@@ -11,6 +11,7 @@ namespace CoreWeb.Models
         public ProfileLookup profileLookup;
         public bool? buddyLookup;
         public bool? blockLookup;
+        public bool? reverseLookup;
     };
     public class PresenceProfileStatus
     {
@@ -18,6 +19,8 @@ namespace CoreWeb.Models
         public ProfileLookup profileLookup;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Profile profile;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public User user;
         public String IP;
         public UInt16 Port;
         public UInt32 quietFlags;

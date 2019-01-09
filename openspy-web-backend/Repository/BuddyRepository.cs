@@ -197,7 +197,7 @@ namespace CoreWeb.Repository
             using (IRedisClient redis = redisClientManager.GetClient())
             {
                 redis.Db = GP_REDIS_DB;
-                redis.SetEntryInHash(redis_hash_key, from_profile.Id.ToString(), lookupData.addReason);
+                redis.SetEntryInHash(redis_hash_key, from_profile.Id.ToString(), lookupData.addReason ?? "");
                 redis.ExpireEntryIn(redis_hash_key, BUDDY_ADDREQ_EXPIRETIME);
 
                 using (IConnection connection = factory.CreateConnection())

@@ -136,6 +136,12 @@ namespace CoreWeb.Controllers.Presence
             response.profile = (await profileRepository.Lookup(profileLookup)).First();
             response.success = true;
 
+            if(user == null)
+            {
+                userLookup.id = response.profile.Userid;
+                user = (await userRepository.Lookup(userLookup)).First();
+            }
+
             //authRequest.client_response = authRequest.auth_token_challenge;
             var client_response = authRequest.client_response;
             authRequest.client_response = dict["true_signature"];
@@ -173,7 +179,9 @@ namespace CoreWeb.Controllers.Presence
                 if (user == null) throw new NoSuchUserException();
                 if (authRequest.profile != null)
                 {
-                    authRequest.profile.userId = user.Id;
+                    var userLookup = new UserLookup();
+                    userLookup.id = user.Id;
+                    authRequest.profile.user = userLookup;
                 }
             }
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();

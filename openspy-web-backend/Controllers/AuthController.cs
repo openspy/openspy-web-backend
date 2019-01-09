@@ -51,7 +51,9 @@ namespace CoreWeb.Controllers
                 user = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
                 if (request.profileLookup != null)
                 {
-                    request.profileLookup.userId = user.Id;
+                    var userLookup = new UserLookup();
+                    userLookup.id = user.Id;
+                    request.profileLookup.user = userLookup;
                 }
             }
             if (user == null) throw new NoSuchUserException();

@@ -11,9 +11,11 @@ namespace CoreWeb.Repository
     public class ProfileRepository : IRepository<Profile, ProfileLookup>
     {
         private GameTrackerDBContext gameTrackerDb;
-        public ProfileRepository(GameTrackerDBContext gameTrackerDb)
+        private IRepository<User, UserLookup> userRepository;
+        public ProfileRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository)
         {
             this.gameTrackerDb = gameTrackerDb;
+            this.userRepository = userRepository;
         }
         public async Task<IEnumerable<Profile>> Lookup(ProfileLookup lookup)
         {
@@ -22,9 +24,13 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.Id == lookup.id.Value);
             }
-            if(lookup.userId.HasValue)
+            if(lookup.user != null)
             {
-                query = query.Where(b => b.Userid == lookup.userId.Value);
+                var user = (await this.userRepository.Lookup(lookup.user)).FirstOrDefault();
+                if(user != null)
+                {
+                    query = query.Where(b => b.Userid == user.Id);
+                }
             }
             if (lookup.namespaceid.HasValue)
             {

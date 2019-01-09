@@ -17,14 +17,21 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<User>> Lookup(UserLookup lookup)
         {
+            bool is_wide = true;
             var query = gameTrackerDb.User as IQueryable<User>;
             if (lookup.id.HasValue)
             {
                 query = query.Where(b => b.Id == lookup.id.Value);
+                is_wide = false;
             }
             if (lookup.email != null)
             {
                 query = query.Where(b => b.Email == lookup.email);
+                is_wide = false;
+            }
+            if (is_wide) //too many results would be found... return no results
+            {
+                return new List<User>();
             }
             if(lookup.partnercode.HasValue)
             {

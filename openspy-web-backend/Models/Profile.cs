@@ -13,8 +13,8 @@ namespace CoreWeb.Models
         public int? id;
         public String nick;
         public String uniquenick;
+        public UserLookup user;
         public int? namespaceid;
-        public int? userId;
         public int? partnercode;
     };
 

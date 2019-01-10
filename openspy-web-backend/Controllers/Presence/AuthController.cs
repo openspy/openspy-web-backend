@@ -142,6 +142,8 @@ namespace CoreWeb.Controllers.Presence
                 user = (await userRepository.Lookup(userLookup)).First();
             }
 
+            response.user = user;
+
             //authRequest.client_response = authRequest.auth_token_challenge;
             var client_response = authRequest.client_response;
             authRequest.client_response = dict["true_signature"];

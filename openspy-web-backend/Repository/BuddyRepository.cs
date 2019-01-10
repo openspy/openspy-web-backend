@@ -41,7 +41,17 @@ namespace CoreWeb.Repository
             var query = gameTrackerDb.Buddy as IQueryable<Buddy>;
             var from_profile = (await this.profileRepository.Lookup(lookup.SourceProfile)).First();
             query = query.Where(b => b.FromProfileid == from_profile.Id);
-            return await query.ToListAsync();
+            var buddies = await query.ToListAsync();
+            foreach(var buddy in buddies)
+            {
+                if(buddy.ToProfile == null)
+                {
+                    ProfileLookup plookup = new ProfileLookup();
+                    plookup.id = buddy.ToProfileid;
+                    buddy.ToProfile = (await this.profileRepository.Lookup(plookup)).First();
+                }
+            }
+            return buddies;
         }
         public Task<bool> Delete(BuddyLookup lookup)
         {
@@ -67,37 +77,21 @@ namespace CoreWeb.Repository
             var num_modified = await gameTrackerDb.SaveChangesAsync();
             return entry.Entity;
         }
-        public void SendAddBlock(Buddy model)
-        {
-            ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
-            {
-                using (IModel channel = connection.CreateModel())
-                {
-                    String message = String.Format("\\type\\authorize_add\\from_profileid\\{0}\\to_profileid\\{1}", model.FromProfileid, model.ToProfileid);
-                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
-
-                    IBasicProperties props = channel.CreateBasicProperties();
-                    props.ContentType = "text/plain";
-                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
-                }
-            }
-        }
 
         public async void AuthorizeAdd(Profile from_profile, Profile to_profile)
         {
-            if (DeleteBuddyRequest(from_profile, to_profile))
+            if (DeleteBuddyRequest(to_profile, from_profile))
             {
                 ConnectionFactory factory = connectionFactory.Get();
                 Buddy buddy = new Buddy();
-                buddy.ToProfileid = to_profile.Id;
-                buddy.FromProfileid = from_profile.Id;
+                buddy.ToProfileid = from_profile.Id;
+                buddy.FromProfileid = to_profile.Id;
                 await Create(buddy);
                 using (IConnection connection = factory.CreateConnection())
                 {
                     using (IModel channel = connection.CreateModel())
                     {
-                        String message = String.Format("\\type\\authorize_add\\from_profileid\\{0}\\to_profileid\\{1}", from_profile.Id, to_profile.Id);
+                        String message = String.Format("\\type\\authorize_add\\to_profileid\\{0}\\from_profileid\\{1}", from_profile.Id, to_profile.Id);
                         byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
                         IBasicProperties props = channel.CreateBasicProperties();
@@ -108,7 +102,7 @@ namespace CoreWeb.Repository
             }
             else
             {
-                throw new ArgumentException();
+                //throw new ArgumentException();
             }
         }
         public bool DeleteBuddyRequest(Profile from, Profile to)
@@ -126,7 +120,7 @@ namespace CoreWeb.Repository
                 return true;
             }
         }
-        public void SendAddEvent(Profile from, Profile to, String reason)
+        public async void SendAddEvent(Profile from, Profile to, String reason)
         {
             ConnectionFactory factory = connectionFactory.Get();
             using (IConnection connection = factory.CreateConnection())

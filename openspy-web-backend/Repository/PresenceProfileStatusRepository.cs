@@ -40,8 +40,8 @@ namespace CoreWeb.Repository
             var is_block_lookup = lookup.blockLookup.HasValue && lookup.blockLookup.Value;
             var is_reverse_lookup = lookup.reverseLookup.HasValue && lookup.reverseLookup.Value;
 
-            var to_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
-            if (to_profile == null) throw new NoSuchUserException();
+            var from_profile = (await this.profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
+            if (from_profile == null) throw new NoSuchUserException();
 
             List<PresenceProfileStatus> list = new List<PresenceProfileStatus>();
             using (IRedisClient redis = redisClientManager.GetClient())
@@ -50,7 +50,7 @@ namespace CoreWeb.Repository
                 PresenceProfileStatus status = new PresenceProfileStatus();
                 if(!is_buddy_lookup && !is_block_lookup)
                 {
-                    list.Add(await GetStatusFromProfile(to_profile, redis));
+                    list.Add(await GetStatusFromProfile(from_profile, redis));
                 }
                 else if (is_buddy_lookup)
                 {
@@ -78,6 +78,7 @@ namespace CoreWeb.Repository
         }
         private async Task<PresenceProfileStatus> GetStatusFromProfile(Profile profile, IRedisClient redis)
         {
+            redis.Db = PRESENCE_STATUS_REDISDB;
             PresenceProfileStatus status = new PresenceProfileStatus();
             var redis_hash_key = "status_" + profile.Id;
             status.IP = redis.GetValueFromHash(redis_hash_key, "address");
@@ -133,22 +134,39 @@ namespace CoreWeb.Repository
                 redis.SetEntryInHash(redis_key, "status_string", model.statusText);
                 redis.SetEntryInHash(redis_key, "location_string", model.locationText);
                 redis.SetEntryInHash(redis_key, "quiet_flags", model.quietFlags.ToString());
-                ConnectionFactory factory = connectionFactory.Get();
-                using (IConnection connection = factory.CreateConnection())
-                {
-                    using (IModel channel = connection.CreateModel())
-                    {
-                        String message = String.Format("\\type\\status_update\\profileid\\{0}\\status_string\\{1}\\status\\{2}\\location_string\\{3}\\quiet_flags\\{4}\\ip\\{5}\\port\\{6}", to_profile.Id,
-                    model.statusText, model.statusFlags, model.locationText, model.quietFlags, model.IP, model.Port);
-                        byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
-
-                        IBasicProperties props = channel.CreateBasicProperties();
-                        props.ContentType = "text/plain";
-                        channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
-                    }
-                }
+                await SendStatusUpdate(to_profile, model);
             }
             return model;
+        }
+        public async Task SendStatusUpdate(Profile profile, PresenceProfileStatus status = null)
+        {
+            if(status == null)
+            {
+                using (IRedisClient redis = redisClientManager.GetClient())
+                {
+                    status = await GetStatusFromProfile(profile, redis);
+                }
+                if(status == null)
+                {
+                    return;
+                }
+            }
+            
+            ConnectionFactory factory = connectionFactory.Get();
+            using (IConnection connection = factory.CreateConnection())
+            {
+                using (IModel channel = connection.CreateModel())
+                {
+                    String message = String.Format("\\type\\status_update\\profileid\\{0}\\status_string\\{1}\\status\\{2}\\location_string\\{3}\\quiet_flags\\{4}\\ip\\{5}\\port\\{6}", profile.Id,
+                status.statusText, status.statusFlags, status.locationText, status.quietFlags, status.IP, status.Port);
+                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
+
+                    IBasicProperties props = channel.CreateBasicProperties();
+                    props.ContentType = "text/plain";
+                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                }
+            }
+
         }
         public Task<PresenceProfileStatus> Create(PresenceProfileStatus model)
         {

@@ -22,13 +22,15 @@ namespace CoreWeb.Controllers.Presence
         private IRepository<Profile, ProfileLookup> profileRepository;
         private BuddyRepository buddyRepository;
         private BlockRepository blockRepository;
-        
-        public ListController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository)
+        private PresenceProfileStatusRepository presenceProfileStatusRepository;
+
+        public ListController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository, IRepository<PresenceProfileStatus, PresenceProfileLookup> presenceProfileStatusRepository)
         {
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.buddyRepository = (BuddyRepository)buddyRepository;
             this.blockRepository = (BlockRepository)blockRepository;
+            this.presenceProfileStatusRepository = (PresenceProfileStatusRepository)presenceProfileStatusRepository;
         }
         [HttpPut("Buddy")]
         public IActionResult PutBuddy([FromBody] BuddyLookup lookupData)
@@ -91,6 +93,8 @@ namespace CoreWeb.Controllers.Presence
             var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
             buddyRepository.AuthorizeAdd(from_profile, to_profile);
 
+            await presenceProfileStatusRepository.SendStatusUpdate(to_profile);
+            await presenceProfileStatusRepository.SendStatusUpdate(from_profile);
         }
 
         [HttpPost("LookupBuddy")]

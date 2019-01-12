@@ -78,7 +78,7 @@ namespace CoreWeb.Repository
             return entry.Entity;
         }
 
-        public async void AuthorizeAdd(Profile from_profile, Profile to_profile)
+        public async Task<bool> AuthorizeAdd(Profile from_profile, Profile to_profile)
         {
             if (DeleteBuddyRequest(to_profile, from_profile))
             {
@@ -97,13 +97,31 @@ namespace CoreWeb.Repository
                         IBasicProperties props = channel.CreateBasicProperties();
                         props.ContentType = "text/plain";
                         channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                        return true;
                     }
                 }
+            }/* else if(await IsOnBuddyList(to_profile, from_profile))
+            {
+                Buddy buddy = new Buddy();
+                buddy.ToProfileid = to_profile.Id;
+                buddy.FromProfileid = from_profile.Id;
+                await Create(buddy);
+                return true;
             }
             else
             {
-                //throw new ArgumentException();
-            }
+                throw new ArgumentException();
+            }*/
+            return false;
+        }
+        public Task<bool> IsOnBuddyList(Profile from, Profile to)
+        {
+            return Task.Run(() =>
+            {
+                var query = gameTrackerDb.Buddy as IQueryable<Buddy>;
+                query = query.Where(b => b.FromProfileid == from.Id && b.ToProfileid == to.Id);
+                return query.Count() > 0;
+            });
         }
         public bool DeleteBuddyRequest(Profile from, Profile to)
         {
@@ -120,7 +138,7 @@ namespace CoreWeb.Repository
                 return true;
             }
         }
-        public async void SendAddEvent(Profile from, Profile to, String reason)
+        public async Task SendAddEvent(Profile from, Profile to, String reason)
         {
             ConnectionFactory factory = connectionFactory.Get();
             using (IConnection connection = factory.CreateConnection())
@@ -157,7 +175,7 @@ namespace CoreWeb.Repository
             }
         }
 
-        public async void SendMessage(SendMessageRequest messageData)
+        public async Task SendMessage(SendMessageRequest messageData)
         {
             //TODO: check if user is online... if not save and send on next login
             ConnectionFactory factory = connectionFactory.Get();
@@ -178,7 +196,7 @@ namespace CoreWeb.Repository
                 }
             }
         }
-        public async void SendBuddyRequest(BuddyLookup lookupData)
+        public async Task SendBuddyRequest(BuddyLookup lookupData)
         {
             ConnectionFactory factory = connectionFactory.Get();
 

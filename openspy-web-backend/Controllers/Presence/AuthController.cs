@@ -89,7 +89,7 @@ namespace CoreWeb.Controllers.Presence
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
             if (profile == null) throw new NoSuchUserException();
 
-            DateTime expiresAt = DateTime.Now.AddDays(1);
+            DateTime expiresAt = DateTime.UtcNow.AddDays(1);
 
             if(authRequest.expiresAtSeconds.HasValue)
             {

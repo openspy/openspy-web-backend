@@ -10,6 +10,11 @@ using CoreWeb.Repository;
 
 namespace CoreWeb.Controllers.generic
 {
+    public class DeleteStatus
+    {
+        public bool success;
+    }
+
     [Route("v1/[controller]")]
     [ApiController]
     public class ModelController<Mdl, Lkup> : Controller
@@ -42,9 +47,11 @@ namespace CoreWeb.Controllers.generic
 
         // DELETE api/<controller>/5
         [HttpDelete]
-        public virtual Task<bool> Delete([FromBody] Lkup lookup)
+        public virtual async Task<DeleteStatus> Delete([FromBody] Lkup lookup)
         {
-            return repository.Delete(lookup);
+            DeleteStatus status = new DeleteStatus();
+            status.success = await repository.Delete(lookup);
+            return status;
         }
     }
 }

@@ -29,6 +29,6 @@ namespace CoreWeb.Controllers
         public override Task<Group> Put([FromBody]Group value) => base.Put(value);
 
         [HttpDelete]
-        public override Task<bool> Delete([FromBody]GroupLookup value) => base.Delete(value);
+        public override Task<DeleteStatus> Delete([FromBody]GroupLookup value) => base.Delete(value);
     }
 }

@@ -33,13 +33,12 @@ namespace CoreWeb.Controllers.Presence
             this.presenceProfileStatusRepository = (PresenceProfileStatusRepository)presenceProfileStatusRepository;
         }
         [HttpPut("Buddy")]
-        public IActionResult PutBuddy([FromBody] BuddyLookup lookupData)
+        public async Task PutBuddy([FromBody] BuddyLookup lookupData)
         {
-            buddyRepository.SendBuddyRequest(lookupData);
-            return Ok();
+            await buddyRepository.SendBuddyRequest(lookupData);
         }
         [HttpPut("Block")]
-        public async void PutBlock([FromBody] BuddyLookup lookupData)
+        public async Task PutBlock([FromBody] BuddyLookup lookupData)
         {
             var from_profile = (await profileRepository.Lookup(lookupData.SourceProfile)).First();
             var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
@@ -87,14 +86,17 @@ namespace CoreWeb.Controllers.Presence
         }
 
         [HttpPost("AuthorizeAdd")]
-        public async void CreateAuthorizeAdd([FromBody] BuddyLookup lookupData)
+        public async Task CreateAuthorizeAdd([FromBody] BuddyLookup lookupData)
         {
             var from_profile = (await profileRepository.Lookup(lookupData.SourceProfile)).First();
             var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
-            buddyRepository.AuthorizeAdd(from_profile, to_profile);
+            bool status_update = await buddyRepository.AuthorizeAdd(from_profile, to_profile);
 
-            await presenceProfileStatusRepository.SendStatusUpdate(to_profile);
-            await presenceProfileStatusRepository.SendStatusUpdate(from_profile);
+            if (status_update)
+            {
+                await presenceProfileStatusRepository.SendStatusUpdate(to_profile);
+                await presenceProfileStatusRepository.SendStatusUpdate(from_profile);
+            }
         }
 
         [HttpPost("LookupBuddy")]
@@ -134,9 +136,9 @@ namespace CoreWeb.Controllers.Presence
         }
 
         [HttpPost("SendMessage")]
-        public bool SendMessage([FromBody] SendMessageRequest messageData)
+        public async Task<bool> SendMessage([FromBody] SendMessageRequest messageData)
         {
-            buddyRepository.SendMessage(messageData);
+            await buddyRepository.SendMessage(messageData);
             return true;
         }
     }

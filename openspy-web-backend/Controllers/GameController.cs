@@ -28,6 +28,6 @@ namespace CoreWeb.Controllers
         public override Task<Game> Put([FromBody]Game value) => base.Put(value);
 
         [HttpDelete]
-        public override Task<bool> Delete([FromBody]GameLookup value) => base.Delete(value);
+        public override Task<DeleteStatus> Delete([FromBody]GameLookup value) => base.Delete(value);
     }
 }

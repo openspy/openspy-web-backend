@@ -1,13 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using CoreWeb.Filters;
 using CoreWeb.Models;
+using Newtonsoft.Json;
 
 namespace CoreWeb.Models
 {
+    public class PersistDataLookup
+    {
+        public GameLookup gameLookup;
+        public ProfileLookup profileLookup;
+        public int? PersistType { get; set; }
+        public int? DataIndex { get; set; }
+};
     public partial class PersistData
     {
         public int Id { get; set; }
-        public DateTimeOffset? Modified { get; set; }
+        [JsonConverter(typeof(JsonDateTimeConverter))]
+        public DateTime? Modified { get; set; }
         public byte[] Base64Data { get; set; }
         public int? PersistType { get; set; }
         public int? DataIndex { get; set; }

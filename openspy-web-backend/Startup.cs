@@ -97,6 +97,8 @@ namespace CoreWeb
             services.AddScoped<IRepository<Buddy, BuddyLookup>, BuddyRepository>();
             services.AddScoped<IRepository<Block, BuddyLookup>, BlockRepository>();
             services.AddScoped<IRepository<PresenceProfileStatus, PresenceProfileLookup>, PresenceProfileStatusRepository>();
+            services.AddScoped<IRepository<PersistKeyedData, PersistKeyedDataLookup>, PersistKeyedDataRepository>();
+            services.AddScoped<IRepository<PersistData, PersistDataLookup>, PersistDataRepository>();
             //IRepository<PresenceProfileStatus, PresenceProfileLookup> profileStatusRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
 

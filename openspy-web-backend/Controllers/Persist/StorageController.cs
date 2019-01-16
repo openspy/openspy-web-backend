@@ -7,6 +7,7 @@ using CoreWeb.Models;
 using CoreWeb.Repository;
 using System.Text;
 using CoreWeb.Exception;
+using Microsoft.AspNetCore.Authorization;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 

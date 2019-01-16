@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using CoreWeb.Models;
 using CoreWeb.Repository;
 using System.Text;
+using CoreWeb.Exception;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -40,22 +41,25 @@ namespace CoreWeb.Controllers.Persist
         public GameLookup gameLookup;
         public Dictionary<String, String> keyValueList;
         public bool? complete;
-        public String game_identifier;
+        public String _id;
     };
     [Route("v1/Persist/[controller]")]
+    [Authorize(Policy = "Persist")]
     [ApiController]
     public class StorageController : Controller
     {
         public PersistDataRepository persistRepository;
         public PersistKeyedDataRepository persistKeyedRepository;
+        private SnapShotRepository snapshotRepository;
         private IRepository<Profile, ProfileLookup> profileRepository;
         private IRepository<Game, GameLookup> gameRepository;
-        public StorageController(IRepository<PersistData, PersistDataLookup> persistRepository, IRepository<PersistKeyedData, PersistKeyedDataLookup> persistKeyedRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository)
+        public StorageController(IRepository<PersistData, PersistDataLookup> persistRepository, IRepository<PersistKeyedData, PersistKeyedDataLookup> persistKeyedRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IRepository<Snapshot, SnapshotLookup> snapshotRepository)
         {
             this.persistKeyedRepository = (PersistKeyedDataRepository)persistKeyedRepository;
             this.persistRepository = (PersistDataRepository)persistRepository;
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;
+            this.snapshotRepository = (SnapShotRepository)snapshotRepository;
         }
         [HttpPut("SetKVData")]
         public async Task SetPersistKeyedData([FromBody] SetDataRequest request)
@@ -125,10 +129,12 @@ namespace CoreWeb.Controllers.Persist
         }
 
         [HttpPut("SetData")]
-        public async Task SetPersistData([FromBody] SetDataRequest request)
+        public async Task<PersistData> SetPersistData([FromBody] SetDataRequest request)
         {
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
             var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
 
             var lookup = new PersistDataLookup();
             lookup.profileLookup = request.profileLookup;
@@ -140,14 +146,21 @@ namespace CoreWeb.Controllers.Persist
             PersistData data_entry = null;
             if (request.base64Data.Length == 0)
             {
-                await persistRepository.Delete(lookup);
+                bool success = await persistRepository.Delete(lookup);
+                if(success)
+                {
+                    var data = new PersistData();
+                    data.Modified = DateTime.UtcNow;
+                    data.Profile = profile;
+                    return data;
+                }
             } else
             {
                 data_entry = (await persistRepository.Lookup(lookup)).FirstOrDefault();
                 if (data_entry != null)
                 {
                     data_entry.Base64Data = Convert.FromBase64String(request.base64Data);
-                    await persistRepository.Update(data_entry);
+                    return await persistRepository.Update(data_entry);
                 }
                 else
                 {
@@ -157,10 +170,10 @@ namespace CoreWeb.Controllers.Persist
                     data.PersistType = request.persistType;
                     data.Profileid = profile.Id;
                     data.Gameid = game.Id;
-                    await persistRepository.Create(data);
+                    return await persistRepository.Create(data);
                 }
             }
-
+            return null;
         }
 
         [HttpPost("GetData")]
@@ -176,14 +189,34 @@ namespace CoreWeb.Controllers.Persist
         }
 
         [HttpPut("NewGame")]
-        public void DeclareNewGame([FromBody] NewGameRequest request)
+        public async Task<Snapshot> DeclareNewGame([FromBody] NewGameRequest request)
         {
-            throw new NotImplementedException();
+            var snapshot = new Snapshot();
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+            var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+            snapshot.gameid = game.Id;
+            snapshot.profileid = profile.Id;
+            snapshot.ip = "127.0.0.1:666";
+            return await snapshotRepository.Create(snapshot);
         }
         [HttpPut("AddGameSnapshot")]
-        public void AddGameSnapshot([FromBody] AddGameSnapshotRequest request)
+        public async Task<bool> AddGameSnapshot([FromBody] AddGameSnapshotRequest request)
         {
-            throw new NotImplementedException();
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+            var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+
+            var update = new SnapshotUpdate();
+            update.data = request.keyValueList;
+            update.profileid = profile.Id;
+            update.gameid = game.Id;
+            update.completed = request.complete.HasValue && request.complete.Value;
+            
+            return await snapshotRepository.AppendSnapshotUpdate(request._id, update);
+            
         }
     }
 }

@@ -14,19 +14,6 @@ using CoreWeb.Crypto;
 
 namespace CoreWeb.Repository
 {
-    public class SessionLookup
-    {
-        public String key;
-        public ProfileLookup profile;
-    };
-    public class Session
-    {
-        public Profile profile;
-        public User user;
-        public TimeSpan ?expiresIn;
-        public DateTime? expiresAt;
-        public String sessionKey;
-    };
     public class AuthSessionRepository : IRepository<Session, SessionLookup>
     {
         private const int REDIS_SESSION_DB = 3;

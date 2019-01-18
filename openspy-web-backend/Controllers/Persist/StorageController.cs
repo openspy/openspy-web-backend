@@ -44,6 +44,11 @@ namespace CoreWeb.Controllers.Persist
         public bool? complete;
         public String _id;
     };
+
+    public class UpdateStatus
+    {
+        public bool success;
+    }
     [Route("v1/Persist/[controller]")]
     [Authorize(Policy = "Persist")]
     [ApiController]
@@ -192,6 +197,7 @@ namespace CoreWeb.Controllers.Persist
         [HttpPut("NewGame")]
         public async Task<Snapshot> DeclareNewGame([FromBody] NewGameRequest request)
         {
+            var IP = HttpContext.Request.Headers["X-OpenSpy-Peer-Address"];
             var snapshot = new Snapshot();
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
             if (game == null) throw new ArgumentException();
@@ -199,12 +205,13 @@ namespace CoreWeb.Controllers.Persist
             if (profile == null) throw new NoSuchUserException();
             snapshot.gameid = game.Id;
             snapshot.profileid = profile.Id;
-            snapshot.ip = "127.0.0.1:666";
+            snapshot.ip = IP;
             return await snapshotRepository.Create(snapshot);
         }
         [HttpPut("AddGameSnapshot")]
-        public async Task<bool> AddGameSnapshot([FromBody] AddGameSnapshotRequest request)
+        public async Task<UpdateStatus> AddGameSnapshot([FromBody] AddGameSnapshotRequest request)
         {
+            UpdateStatus status = new UpdateStatus();
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
             if (game == null) throw new ArgumentException();
             var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
@@ -216,7 +223,8 @@ namespace CoreWeb.Controllers.Persist
             update.gameid = game.Id;
             update.completed = request.complete.HasValue && request.complete.Value;
             
-            return await snapshotRepository.AppendSnapshotUpdate(request._id, update);
+            status.success = await snapshotRepository.AppendSnapshotUpdate(request._id, update);
+            return status;
             
         }
     }

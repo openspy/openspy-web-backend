@@ -13,12 +13,12 @@ using Swashbuckle.AspNetCore.Swagger;
 using CoreWeb.Database;
 using CoreWeb.Models;
 using CoreWeb.Repository;
-using ServiceStack.Redis;
 using System.Security.Principal;
 using CoreWeb.Authentication;
 using CoreWeb.Crypto;
 using System.Reflection;
 using System.IO;
+using StackExchange.Redis;
 
 namespace CoreWeb
 {
@@ -92,7 +92,13 @@ namespace CoreWeb
             services.AddDbContext<GameTrackerDBContext>();
             services.AddDbContext<GamemasterDBContext>();
 
-            services.AddScoped<IRedisClientsManager>(c =>new BasicRedisClientManager("redis://localhost:6379"));
+
+            var mplexer = ConnectionMultiplexer.Connect("localhost,allowAdmin=true");
+            services.AddSingleton<IConnectionMultiplexer>(provider => mplexer);
+            services.AddScoped<PresenceStatusDatabase, PresenceStatusDatabase>(c => new PresenceStatusDatabase(mplexer));
+            services.AddScoped<SessionCacheDatabase, SessionCacheDatabase>(c => new SessionCacheDatabase(mplexer));
+            services.AddScoped<GameCacheDatabase, GameCacheDatabase>(c => new GameCacheDatabase(mplexer));
+
             services.AddScoped<IRepository<User, UserLookup>, UserRepository>();
             services.AddScoped<IRepository<Profile, ProfileLookup>, ProfileRepository>();
             services.AddScoped<IRepository<Game, GameLookup>, GameRepository>();

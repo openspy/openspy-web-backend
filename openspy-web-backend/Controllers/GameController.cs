@@ -11,11 +11,13 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers
 {
+    [Authorize(Policy = "GameManage")]
     public class GameController : ModelController<Game, GameLookup>
     {
+        GameRepository gameRepository;
         public GameController(IRepository<Game, GameLookup> repository) : base(repository)
         {
-
+            gameRepository = (GameRepository)repository;
         }
         [HttpPost("lookup")]
         [Authorize(Policy = "CoreService")]
@@ -29,5 +31,11 @@ namespace CoreWeb.Controllers
 
         [HttpDelete]
         public override Task<DeleteStatus> Delete([FromBody]GameLookup value) => base.Delete(value);
+
+        [HttpPost("SyncToRedis")]
+        public async Task SyncToRedis()
+        {
+            await gameRepository.SyncToRedis();
+        }
     }
 }

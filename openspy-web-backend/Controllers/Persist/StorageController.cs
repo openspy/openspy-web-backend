@@ -101,7 +101,7 @@ namespace CoreWeb.Controllers.Persist
                 found_key.Modified = DateTime.UtcNow;
                 found_key.KeyValue = Convert.FromBase64String(request.keyValueList[found_key.KeyName]);
                 await persistKeyedRepository.Update(found_key);
-                request.keyValueList.RemoveKey(found_key.KeyName);
+                request.keyValueList.Remove(found_key.KeyName);
             }
 
             //create new

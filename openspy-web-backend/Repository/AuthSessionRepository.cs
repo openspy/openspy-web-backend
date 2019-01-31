@@ -1,11 +1,8 @@
 ﻿using CoreWeb.Database;
 using CoreWeb.Models;
 using Newtonsoft.Json;
-using ServiceStack.Redis;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,22 +14,22 @@ namespace CoreWeb.Repository
     public class AuthSessionRepository : IRepository<Session, SessionLookup>
     {
         private const int REDIS_SESSION_DB = 3;
-        private IRedisClientsManager redisClientManager;
         private IRepository<User, UserLookup> userRepository;
         private IRepository<Profile, ProfileLookup> profileRepository;
         private IRepository<Game, GameLookup> gameRepository;
         private IMQConnectionFactory mqConnectionFactory;
         private PresencePreAuthProvider rsaProvider;
         private TimeSpan defaultTimeSpan;
-        public AuthSessionRepository(IRedisClientsManager redisClientManager, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, PresencePreAuthProvider rsaProvider)
+        private SessionCacheDatabase sessionCache;
+        public AuthSessionRepository(SessionCacheDatabase sessionCache, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, PresencePreAuthProvider rsaProvider)
         {
             this.defaultTimeSpan = TimeSpan.FromHours(2);
-            this.redisClientManager = redisClientManager;
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;
             this.mqConnectionFactory = mqConnectionFactory;
             this.rsaProvider = rsaProvider;
+            this.sessionCache = sessionCache;
         }
         public Task<IEnumerable<Session>> Lookup(SessionLookup lookup)
         {
@@ -46,51 +43,46 @@ namespace CoreWeb.Repository
         {
             return null;
         }
-        public Task<Session> Create(Session model)
-        {
-            return Task.Run(async () =>
-            {
-                Session session = new Session();
-                using (IRedisClient redis = redisClientManager.GetClient())
-                {
-                    var session_key = generateSessionKey();
-                    redis.Db = REDIS_SESSION_DB;
-                    redis.SetEntryInHash(session_key, "guid", session_key);
-                    if (model.profile != null && model.profile.Id != 0)
-                    {
-                        redis.SetEntryInHash(session_key, "profileid", model.profile.Id.ToString());
-                        redis.SetEntryInHash(session_key, "userid", model.profile.Userid.ToString());
-                    }
-                    else if (model.user != null)
-                    {
-                        UserLookup userLookup = new UserLookup();
-                        if(model.user.Id != 0)
-                        {
-                            userLookup.id = model.user.Id;
-                            redis.SetEntryInHash(session_key, "userid", model.user.Id.ToString());
-                        }                        
-                        session.user = (await this.userRepository.Lookup(userLookup)).ToList().First();
-                    }
-                    else
-                    {
-                        throw new ArgumentException();
-                    }
 
-                    if(model.profile != null)
-                    {
-                        ProfileLookup lookup = new ProfileLookup();
-                        lookup.id = model.profile.Id;
-                        session.profile = (await this.profileRepository.Lookup(lookup)).ToList().First();
-                    }
-                    
-                    session.expiresIn = model.expiresIn ?? this.defaultTimeSpan;
-                    session.expiresAt = DateTime.Now.Add(model.expiresIn ?? this.defaultTimeSpan);
-                    session.sessionKey = session_key;
-                    redis.ExpireEntryIn(session_key, model.expiresIn ?? this.defaultTimeSpan);
-                    SendLoginEvent();
+        public async Task<Session> Create(Session model)
+        {
+            Session session = new Session();
+            var session_key = generateSessionKey();
+            var db = sessionCache.GetDatabase();
+            db.HashSet(session_key.ToString(), "guid", session_key.ToString());
+            if (model.profile != null && model.profile.Id != 0)
+            {
+                db.HashSet(session_key.ToString(), "profileid", model.profile.Id.ToString());
+                db.HashSet(session_key.ToString(), "userid", model.profile.Userid.ToString());
+            }
+            else if (model.user != null)
+            {
+                UserLookup userLookup = new UserLookup();
+                if (model.user.Id != 0)
+                {
+                    userLookup.id = model.user.Id;
+                    db.HashSet(session_key.ToString(), "userid", model.user.Id.ToString());
                 }
-                return session;
-            });
+                session.user = (await this.userRepository.Lookup(userLookup)).ToList().First();
+            }
+            else
+            {
+                throw new ArgumentException();
+            }
+
+            if (model.profile != null)
+            {
+                ProfileLookup lookup = new ProfileLookup();
+                lookup.id = model.profile.Id;
+                session.profile = (await this.profileRepository.Lookup(lookup)).ToList().First();
+            }
+
+            session.expiresIn = model.expiresIn ?? this.defaultTimeSpan;
+            session.expiresAt = DateTime.Now.Add(model.expiresIn ?? this.defaultTimeSpan);
+            session.sessionKey = session_key;
+            db.KeyExpire(session_key.ToString(), model.expiresIn ?? this.defaultTimeSpan);
+            SendLoginEvent();
+            return session;
         }
         private String generateSessionKey()
         {

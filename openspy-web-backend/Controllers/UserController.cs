@@ -55,7 +55,7 @@ namespace CoreWeb.Controllers
             User userModel = (await userRepository.Lookup(user)).FirstOrDefault();
 
             //if uniquenick set, check for uniquenick conflictss in namespaceid
-            if (register.profile.Uniquenick.Length != 0 && userModel != null)
+            if (register.profile.Uniquenick != null && userModel != null)
             {
                 var checkData = await profileRepository.CheckUniqueNickInUse(register.profile.Uniquenick, register.profile.Namespaceid, register.user.Partnercode);
                 if (checkData.Item1)

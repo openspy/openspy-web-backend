@@ -1,6 +1,5 @@
 ﻿using CoreWeb.Database;
 using CoreWeb.Models;
-using ServiceStack.Redis;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,25 +15,23 @@ namespace CoreWeb.Repository
         private GameTrackerDBContext gameTrackerDb;
         private IRepository<User, UserLookup> userRepository;
         private IRepository<Profile, ProfileLookup> profileRepository;
-        private IRedisClientsManager redisClientManager;
         private IMQConnectionFactory connectionFactory;
-        private int GP_REDIS_DB;
         private String GP_EXCHANGE;
         private String GP_BUDDY_ROUTING_KEY;
         private TimeSpan BUDDY_ADDREQ_EXPIRETIME;
+        private PresenceStatusDatabase presenceStatusDatabase;
 
-        public BuddyRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRedisClientsManager redisClientManager, IMQConnectionFactory connectionFactory)
+        public BuddyRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IMQConnectionFactory connectionFactory, PresenceStatusDatabase presenceStatusDatabase)
         {
             GP_EXCHANGE = "presence.core";
             GP_BUDDY_ROUTING_KEY = "presence.buddies";
-            GP_REDIS_DB = 5;
             BUDDY_ADDREQ_EXPIRETIME = TimeSpan.FromSeconds(604800);
 
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameTrackerDb = gameTrackerDb;
-            this.redisClientManager = redisClientManager;
             this.connectionFactory = connectionFactory;
+            this.presenceStatusDatabase = presenceStatusDatabase;
         }
         public async Task<IEnumerable<Buddy>> Lookup(BuddyLookup lookup)
         {
@@ -126,33 +123,32 @@ namespace CoreWeb.Repository
         public bool DeleteBuddyRequest(Profile from, Profile to)
         {
             var redis_hash_key = "add_req_" + to.Id;
-            using (IRedisClient redis = redisClientManager.GetClient())
+            var db = presenceStatusDatabase.GetDatabase();
+            if(db.KeyExists(redis_hash_key))
             {
-                redis.Db = GP_REDIS_DB;
-                string reason = redis.GetValueFromHash(redis_hash_key, from.Id.ToString());
-                if (reason == null)
-                {
-                    return false;
-                }
-                redis.Remove(redis_hash_key);
+                db.KeyDelete(redis_hash_key);
                 return true;
             }
+            return false;
         }
-        public async Task SendAddEvent(Profile from, Profile to, String reason)
+        public Task SendAddEvent(Profile from, Profile to, String reason)
         {
-            ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            return Task.Run(() =>
             {
-                using (IModel channel = connection.CreateModel())
+                ConnectionFactory factory = connectionFactory.Get();
+                using (IConnection connection = factory.CreateConnection())
                 {
-                    String message = String.Format("\\type\\add_request\\from_profileid\\{1}\\to_profileid\\{2}\\reason\\{0]", reason, from.Id, to.Id);
-                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
+                    using (IModel channel = connection.CreateModel())
+                    {
+                        String message = String.Format("\\type\\add_request\\from_profileid\\{1}\\to_profileid\\{2}\\reason\\{0]", reason, from.Id, to.Id);
+                        byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
-                    props.ContentType = "text/plain";
-                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                        IBasicProperties props = channel.CreateBasicProperties();
+                        props.ContentType = "text/plain";
+                        channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                    }
                 }
-            }
+            });
         }
         public void SendDeleteEvent(Profile from, Profile to)
         {
@@ -206,23 +202,22 @@ namespace CoreWeb.Repository
             var to_profile = (await this.profileRepository.Lookup(lookupData.TargetProfile)).First();
             var redis_hash_key = "add_req_" + to_profile.Id;
 
-            using (IRedisClient redis = redisClientManager.GetClient())
+            var db = presenceStatusDatabase.GetDatabase();
+            //redis.SetEntryInHash(redis_hash_key, from_profile.Id.ToString(), lookupData.addReason ?? "");
+            //redis.ExpireEntryIn(redis_hash_key, BUDDY_ADDREQ_EXPIRETIME);
+            db.HashSet(redis_hash_key, from_profile.Id.ToString(), lookupData.addReason ?? "");
+            db.KeyExpire(redis_hash_key, BUDDY_ADDREQ_EXPIRETIME);
+
+            using (IConnection connection = factory.CreateConnection())
             {
-                redis.Db = GP_REDIS_DB;
-                redis.SetEntryInHash(redis_hash_key, from_profile.Id.ToString(), lookupData.addReason ?? "");
-                redis.ExpireEntryIn(redis_hash_key, BUDDY_ADDREQ_EXPIRETIME);
-
-                using (IConnection connection = factory.CreateConnection())
+                using (IModel channel = connection.CreateModel())
                 {
-                    using (IModel channel = connection.CreateModel())
-                    {
-                        String message = String.Format("\\type\\add_request\\from_profileid\\{0}\\to_profileid\\{1}\\reason\\{2}", from_profile.Id, to_profile.Id, lookupData.addReason);
-                        byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
+                    String message = String.Format("\\type\\add_request\\from_profileid\\{0}\\to_profileid\\{1}\\reason\\{2}", from_profile.Id, to_profile.Id, lookupData.addReason);
+                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                        IBasicProperties props = channel.CreateBasicProperties();
-                        props.ContentType = "text/plain";
-                        channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
-                    }
+                    IBasicProperties props = channel.CreateBasicProperties();
+                    props.ContentType = "text/plain";
+                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
                 }
             }
         }

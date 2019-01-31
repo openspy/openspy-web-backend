@@ -1,7 +1,6 @@
 ﻿using CoreWeb.Controllers.Presence;
 using CoreWeb.Database;
 using CoreWeb.Models;
-using ServiceStack.Redis;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,12 +15,11 @@ namespace CoreWeb.Repository
         private GameTrackerDBContext gameTrackerDb;
         private IRepository<User, UserLookup> userRepository;
         private IRepository<Profile, ProfileLookup> profileRepository;
-        private IRedisClientsManager redisClientManager;
         private IMQConnectionFactory connectionFactory;
         private String GP_EXCHANGE;
         private String GP_BLOCK_ROUTING_KEY;
 
-        public BlockRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRedisClientsManager redisClientManager, IMQConnectionFactory connectionFactory)
+        public BlockRepository(GameTrackerDBContext gameTrackerDb, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IMQConnectionFactory connectionFactory)
         {
             GP_EXCHANGE = "presence.core";
             GP_BLOCK_ROUTING_KEY = "presence.buddies";
@@ -29,7 +27,6 @@ namespace CoreWeb.Repository
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameTrackerDb = gameTrackerDb;
-            this.redisClientManager = redisClientManager;
             this.connectionFactory = connectionFactory;
         }
         public async Task<IEnumerable<Block>> Lookup(BuddyLookup lookup)

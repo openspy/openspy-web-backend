@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CoreWeb.Models;
-using CoreWeb.Database;
-using ServiceStack.Redis;
 using CoreWeb.Repository;
 using Microsoft.AspNetCore.Authorization;
 

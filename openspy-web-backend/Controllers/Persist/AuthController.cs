@@ -16,6 +16,7 @@ namespace CoreWeb.Controllers.Persist
     {
         public String client_response;
         public String auth_token;
+        public String cdkey;
         public System.Int32 session_key;
         /// <summary>
         /// Profile data to perform auth against  (Used for Nick/Unique nick auth)
@@ -77,6 +78,10 @@ namespace CoreWeb.Controllers.Persist
             {
                 StringBuilder sBuilder = new StringBuilder();
                 byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2"));
+                }
                 md5String = sBuilder.ToString().ToLower();
             }
             if(md5String.Equals(request.client_response.ToLower()))
@@ -119,6 +124,41 @@ namespace CoreWeb.Controllers.Persist
         public void PreAuth([FromBody] AuthRequest request)
         {
             throw new NotImplementedException();
+        }
+
+        [HttpPost("CDKeyAuth")]
+        public async Task<AuthResponse> CDKeyAuth([FromBody] AuthRequest request)
+        {
+            var lookup = new ProfileLookup();
+            lookup.id = 1;
+            var profile = (await profileRepository.Lookup(lookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+
+            var response = new AuthResponse();
+            response.profile = profile;
+            var userLookup = new UserLookup();
+            userLookup.id = profile.Userid;
+            var user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+            if (user == null) throw new NoSuchUserException();
+            response.user = user;
+            return response;
+        }
+        [HttpPost("ProfileFromCDKey")]
+        public async Task<AuthResponse> ProfileFromCDKey([FromBody] AuthRequest request)
+        {
+            var lookup = new ProfileLookup();
+            lookup.id = 1;
+            var profile = (await profileRepository.Lookup(lookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+
+            var response = new AuthResponse();
+            response.profile = profile;
+            var userLookup = new UserLookup();
+            userLookup.id = profile.Userid;
+            var user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+            if (user == null) throw new NoSuchUserException();
+            response.user = user;
+            return response;
         }
     }
 }

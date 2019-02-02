@@ -93,11 +93,11 @@ namespace CoreWeb
             services.AddDbContext<GamemasterDBContext>();
 
 
-            var mplexer = ConnectionMultiplexer.Connect("localhost,allowAdmin=true");
-            services.AddSingleton<IConnectionMultiplexer>(provider => mplexer);
-            services.AddScoped<PresenceStatusDatabase, PresenceStatusDatabase>(c => new PresenceStatusDatabase(mplexer));
-            services.AddScoped<SessionCacheDatabase, SessionCacheDatabase>(c => new SessionCacheDatabase(mplexer));
-            services.AddScoped<GameCacheDatabase, GameCacheDatabase>(c => new GameCacheDatabase(mplexer));
+            var multiplexer = ConnectionMultiplexer.Connect("localhost,allowAdmin=true");
+            services.AddSingleton<IConnectionMultiplexer>(provider => multiplexer);
+            services.AddScoped<PresenceStatusDatabase, PresenceStatusDatabase>(c => new PresenceStatusDatabase(multiplexer));
+            services.AddScoped<SessionCacheDatabase, SessionCacheDatabase>(c => new SessionCacheDatabase(multiplexer));
+            services.AddScoped<GameCacheDatabase, GameCacheDatabase>(c => new GameCacheDatabase(multiplexer));
 
             services.AddScoped<IRepository<User, UserLookup>, UserRepository>();
             services.AddScoped<IRepository<Profile, ProfileLookup>, ProfileRepository>();
@@ -109,7 +109,7 @@ namespace CoreWeb
             services.AddScoped<IRepository<PresenceProfileStatus, PresenceProfileLookup>, PresenceProfileStatusRepository>();
             services.AddScoped<IRepository<PersistKeyedData, PersistKeyedDataLookup>, PersistKeyedDataRepository>();
             services.AddScoped<IRepository<PersistData, PersistDataLookup>, PersistDataRepository>();
-            //IRepository<PresenceProfileStatus, PresenceProfileLookup> profileStatusRepository, IRepository<Buddy, BuddyLookup> buddyRepository, IRepository<Block, BuddyLookup> blockRepository
+
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
             services.AddScoped<ISnapShotDBContext, SnapShotDBContext>(c => new SnapShotDBContext("mongodb://localhost:27017"));
             services.AddScoped<IRepository<Snapshot, SnapshotLookup>, SnapShotRepository>();

@@ -31,7 +31,7 @@ namespace CoreWeb.Filters
         {
             var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             TimeSpan elapsedTime = (DateTime)value - Epoch;
-            writer.WriteRawValue(elapsedTime.TotalSeconds.ToString());
+            writer.WriteRawValue(((int)elapsedTime.TotalSeconds).ToString());
         }
     }
 }

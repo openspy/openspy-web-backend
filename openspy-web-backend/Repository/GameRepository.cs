@@ -83,7 +83,7 @@ namespace CoreWeb.Repository
                     db.HashSet(game_key, "queryport", game.Queryport.ToString());
                     db.HashSet(game_key, "disabledservices", game.Disabledservices.ToString());
                     db.HashSet(game_key, "backendflags", game.Backendflags.ToString());
-                    db.SetAdd(game.Gamename, game_key);
+                    db.StringSet(game.Gamename, game_key);
                     db.SetAdd("gameid_" + game.Id.ToString(), game_key);
                 }
             });

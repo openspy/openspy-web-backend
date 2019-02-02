@@ -8,6 +8,8 @@ using CoreWeb.Repository;
 using System.Text;
 using CoreWeb.Exception;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
+using CoreWeb.Filters;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -29,6 +31,7 @@ namespace CoreWeb.Controllers.Persist
         public int dataIndex;
         public int persistType;
         public List<string> keys;
+        [JsonConverter(typeof(JsonDateTimeConverter))]
         public System.DateTime? modifiedSince;
     }
     public class NewGameRequest
@@ -67,7 +70,7 @@ namespace CoreWeb.Controllers.Persist
             this.gameRepository = gameRepository;
             this.snapshotRepository = (SnapShotRepository)snapshotRepository;
         }
-        [HttpPut("SetKVData")]
+        [HttpPost("SetKVData")]
         public async Task SetPersistKeyedData([FromBody] SetDataRequest request)
         {
 
@@ -134,7 +137,7 @@ namespace CoreWeb.Controllers.Persist
             return persistKeyedRepository.Lookup(lookup);
         }
 
-        [HttpPut("SetData")]
+        [HttpPost("SetData")]
         public async Task<PersistData> SetPersistData([FromBody] SetDataRequest request)
         {
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
@@ -153,7 +156,7 @@ namespace CoreWeb.Controllers.Persist
             if (request.base64Data.Length == 0)
             {
                 bool success = await persistRepository.Delete(lookup);
-                if(success)
+                //if(success)
                 {
                     var data = new PersistData();
                     data.Modified = DateTime.UtcNow;

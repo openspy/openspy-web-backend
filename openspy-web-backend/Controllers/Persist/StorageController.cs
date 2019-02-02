@@ -112,7 +112,7 @@ namespace CoreWeb.Controllers.Persist
             {
                 var data = new PersistKeyedData();
                 data.KeyName = kvData.Key;
-                data.KeyValue = Encoding.ASCII.GetBytes(kvData.Value);
+                data.KeyValue = Convert.FromBase64String(kvData.Value);
                 data.Modified = DateTime.UtcNow;
                 data.DataIndex = request.dataIndex;
                 data.PersistType = request.persistType;

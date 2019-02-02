@@ -71,9 +71,9 @@ namespace CoreWeb.Controllers.Persist
             this.snapshotRepository = (SnapShotRepository)snapshotRepository;
         }
         [HttpPost("SetKVData")]
-        public async Task SetPersistKeyedData([FromBody] SetDataRequest request)
+        public async Task<List<PersistKeyedData>> SetPersistKeyedData([FromBody] SetDataRequest request)
         {
-
+            List<PersistKeyedData> inserted_data = new List<PersistKeyedData>();
             //update existing
             var lookup = new PersistKeyedDataLookup();
             lookup.gameLookup = request.gameLookup;
@@ -103,7 +103,7 @@ namespace CoreWeb.Controllers.Persist
             {
                 found_key.Modified = DateTime.UtcNow;
                 found_key.KeyValue = Convert.FromBase64String(request.keyValueList[found_key.KeyName]);
-                await persistKeyedRepository.Update(found_key);
+                inserted_data.Add(await persistKeyedRepository.Update(found_key));
                 request.keyValueList.Remove(found_key.KeyName);
             }
 
@@ -121,8 +121,9 @@ namespace CoreWeb.Controllers.Persist
                 var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
                 data.Gameid = game.Id;
                 data.Profileid = profile.Id;
-                await persistKeyedRepository.Create(data);
+                inserted_data.Add(await persistKeyedRepository.Create(data));
             }
+            return inserted_data;
         }
 
         [HttpPost("GetKVData")]

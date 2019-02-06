@@ -10,6 +10,9 @@ namespace CoreWeb.Repository
 {
     public class UserRepository : IRepository<User, UserLookup>
     {
+        private readonly int PARTNERID_GAMESPY = 0;
+        private readonly int PARTNERID_IGN = 10;
+        private readonly int PARTNERID_EA = 20;
         private GameTrackerDBContext gameTrackerDb;
         public UserRepository(GameTrackerDBContext gameTrackerDb)
         {

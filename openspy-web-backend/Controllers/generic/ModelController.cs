@@ -19,7 +19,7 @@ namespace CoreWeb.Controllers.generic
     [ApiController]
     public class ModelController<Mdl, Lkup> : Controller
     {
-        private readonly IRepository<Mdl, Lkup> repository;
+        protected readonly IRepository<Mdl, Lkup> repository;
         public ModelController(IRepository<Mdl, Lkup> repository) {
             this.repository = repository;
         }

@@ -27,15 +27,32 @@ namespace CoreWeb.Controllers
         public override async Task<Profile> Update([FromBody]Profile value)
         {
             //namespaceid 0 cannot have unique nicks
-            if (value.Namespaceid == 0 && value.Uniquenick.Length != 0)
+            if (value.Uniquenick != null)
             {
-                value.Uniquenick = "";
+                if (value.Namespaceid == 0 && value.Uniquenick.Length != 0)
+                {
+                    value.Uniquenick = "";
+                }
+                await PerformUniqueNickChecks(value);
             }
-            if (await PerformUniqueNickChecks(value))
+            await PerformNickChecks(value);
+            return await base.Update(value);
+        }
+
+        // POST api/<controller>
+        [HttpPost("ReplaceProfile")]
+        public async Task<Profile> ReplaceProfile([FromBody]Profile value)
+        {
+            //namespaceid 0 cannot have unique nicks
+            if (value.Uniquenick != null)
             {
-                return await base.Update(value);
+                if (value.Namespaceid == 0 && value.Uniquenick.Length != 0)
+                {
+                    value.Uniquenick = "";
+                }
+                await PerformUniqueNickChecks(value);
             }
-            return null;            
+            return await base.Update(value);
         }
 
         // PUT api/<controller>/5
@@ -57,12 +74,18 @@ namespace CoreWeb.Controllers
         [HttpDelete]
         public override async Task<DeleteStatus> Delete([FromBody] ProfileLookup lookup)
         {
-            var profileLookup = new ProfileLookup();
-            profileLookup.user = new UserLookup();
-            profileLookup.user.id = lookup.user.id;
+            var profiles = (await profileRepository.Lookup(lookup));
+            if(profiles == null || profiles.ToArray().Length <= 0)
+            {
+                throw new NoSuchUserException();
+            }
 
-            var profiles = (await profileRepository.Lookup(profileLookup));
-            if(profiles.ToArray().Length <= 1)
+            var profilesLookup = new ProfileLookup();
+            profilesLookup.user = new UserLookup();
+            profilesLookup.user.id = profiles.First().Userid;
+
+            var userProfiles = (await profileRepository.Lookup(profilesLookup));
+            if (userProfiles == null || userProfiles.ToArray().Length <= 1)
             {
                 throw new CannotDeleteLastProfileException();
             }
@@ -72,24 +95,22 @@ namespace CoreWeb.Controllers
         //CannotDeleteLastProfileException
         private async Task<bool> PerformNickChecks(Profile value)
         {
-            if (!profileRepository.CheckUniqueNickValid(value.Uniquenick, value.Namespaceid))
-            {
-                throw new UniqueNickInvalidException();
-            }
             var profileLookup = new ProfileLookup();
-            profileLookup.id = value.Id;
             profileLookup.nick = value.Nick;
             profileLookup.uniquenick = value.Uniquenick;
             profileLookup.namespaceid = value.Namespaceid;
-            profileLookup.user = new UserLookup();
-            profileLookup.user.id = value.Userid;
+            if(value.Userid != 0)
+            {
+                profileLookup.user = new UserLookup();
+                profileLookup.user.id = value.Userid;
+            }
 
             var profile = (await profileRepository.Lookup(profileLookup)).FirstOrDefault();
             if (profile == null)
             {
                 return false;
             }
-            throw new NickInvalidException();
+            throw new NickInUseException();
         }
         private async Task<bool> PerformUniqueNickChecks(Profile value)
         {

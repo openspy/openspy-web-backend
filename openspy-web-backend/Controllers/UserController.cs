@@ -65,7 +65,8 @@ namespace CoreWeb.Controllers
                         profileId = checkData.Item2;
                         userId = checkData.Item3;
                         throw new UniqueNickInUseException(profileId, userId);
-                    } else
+                    }
+                    else
                     {
                         throw new UserExistsException(userModel); //user exist... need to throw profileid due to GP
                     }
@@ -102,7 +103,21 @@ namespace CoreWeb.Controllers
             //send registration email
 
             return response;
+        }
 
+        [HttpPost]
+        public override async Task<User> Update([FromBody]User value)
+        {
+            //check for email conflicts in partnercode
+            UserLookup user = new UserLookup();
+            user.email = value.Email;
+            user.partnercode = value.Partnercode;
+            User userModel = (await userRepository.Lookup(user)).FirstOrDefault();
+            if(userModel != null)
+            {
+                throw new UserExistsException(userModel);
+            }
+            return await base.Update(value);
         }
     }
 }

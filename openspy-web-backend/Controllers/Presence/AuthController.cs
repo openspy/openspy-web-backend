@@ -128,10 +128,14 @@ namespace CoreWeb.Controllers.Presence
             int.TryParse(dict["profileId"], out profileId);
             profileLookup.id = profileId;
 
-            int.TryParse(dict["userId"], out profileId);
-            userLookup.id = profileId;
 
-            var user = (await userRepository.Lookup(userLookup)).First();
+            User user = null;
+            if(dict.ContainsKey("userId"))
+            {
+                int.TryParse(dict["userId"], out profileId);
+                userLookup.id = profileId;
+                user = (await userRepository.Lookup(userLookup)).First();
+            }            
 
             response.profile = (await profileRepository.Lookup(profileLookup)).First();
             response.success = true;

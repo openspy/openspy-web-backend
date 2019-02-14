@@ -126,6 +126,7 @@ namespace CoreWeb.Repository
                 Dictionary<string, string> authData = new Dictionary<string, string>();
 
                 authData["profileId"] = profile.Id.ToString();
+                authData["userId"] = profile.Userid.ToString();
                 if (expiresAt.HasValue)
                     authData["expiresAt"] = expiresAt.Value.ToFileTimeUtc().ToString();
 

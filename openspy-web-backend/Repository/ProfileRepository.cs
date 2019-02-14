@@ -23,11 +23,21 @@ namespace CoreWeb.Repository
         public async Task<IEnumerable<Profile>> Lookup(ProfileLookup lookup)
         {
             var query = gameTrackerDb.Profile as IQueryable<Profile>;
+            
+            //user queries
+            if (lookup.partnercode.HasValue)
+            {
+                query = query.Where(b => b.User.Partnercode == lookup.partnercode.Value);
+            }
+            query = query.Include(b => b.User); //force the user to be loaded
+
+            //profile queries
             if (lookup.id.HasValue)
             {
                 query = query.Where(b => b.Id == lookup.id.Value);
             }
-            if(lookup.user != null)
+
+            if (lookup.user != null)
             {
                 var user = (await this.userRepository.Lookup(lookup.user)).FirstOrDefault();
                 if(user != null)
@@ -39,6 +49,10 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
             }
+            if(lookup.namespaceids != null)
+            {
+                query = query.Where(b => lookup.namespaceids.Contains(b.Namespaceid));
+            }
             if (lookup.nick != null)
             {
                 query = query.Where(b => b.Nick == lookup.nick);
@@ -47,10 +61,8 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.Uniquenick == lookup.uniquenick);
             }
-            if(lookup.partnercode.HasValue)
-            {
-                query = query.Where(b => b.User.Partnercode == lookup.partnercode.Value);
-            }
+
+            
             return await query.ToListAsync();
         }
         public Task<bool> Delete(ProfileLookup lookup)

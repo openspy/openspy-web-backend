@@ -29,11 +29,11 @@ namespace CoreWeb.Models
         public int? Cpuspeed { get; set; }
         public int? Cpubrandid { get; set; }
         public int? Connectionspeed { get; set; }
-        public sbyte? Hasnetwork { get; set; }
+        public bool? Hasnetwork { get; set; }
         public int Partnercode { get; set; }
-        public int Publicmask { get; set; }
-        public sbyte EmailVerified { get; set; }
-        public sbyte Deleted { get; set; }
+        public System.Int64 Publicmask { get; set; }
+        public bool EmailVerified { get; set; }
+        public bool Deleted { get; set; }
 
         [JsonIgnoreAttribute]
         public ICollection<Profile> Profiles { get; set; }

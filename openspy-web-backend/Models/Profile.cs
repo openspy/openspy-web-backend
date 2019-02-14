@@ -15,6 +15,7 @@ namespace CoreWeb.Models
         public String uniquenick;
         public UserLookup user;
         public int? namespaceid;
+        public List<int> namespaceids;
         public int? partnercode;
     };
 
@@ -51,7 +52,7 @@ namespace CoreWeb.Models
         public System.Int16 Deleted { get; set; }
         public System.Int16 Admin { get; set; }
 
-        [JsonIgnoreAttribute]
+        //[JsonIgnoreAttribute]
         public User User { get; set; }
 
         [JsonIgnoreAttribute]

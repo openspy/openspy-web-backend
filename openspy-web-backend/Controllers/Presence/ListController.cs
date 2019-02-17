@@ -50,24 +50,34 @@ namespace CoreWeb.Controllers.Presence
         [HttpDelete("Buddy")]
         public async Task<bool> DeleteBuddy([FromBody] BuddyLookup lookupData)
         {
+            bool success = false;
             //check if buddy is added to list
             //if not, check for request
-            //if not, throw exception
+            //if not, throw exception            
+            var from_profile = (await profileRepository.Lookup(lookupData.SourceProfile)).First();
+            var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
             var items = await buddyRepository.Lookup(lookupData);
-            if(items.Count() <= 0)
+            if (items.Count() <= 0)
             {
-                var from_profile = (await profileRepository.Lookup(lookupData.SourceProfile)).First();
-                var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
                 if (buddyRepository.DeleteBuddyRequest(from_profile, to_profile) && (!lookupData.silent.HasValue || (lookupData.silent.HasValue && lookupData.silent.Value)))
                 {
                     //TODO: check if offline... add to redis to resend when user logs in
                     await buddyRepository.Delete(lookupData); //delete just in case
-                    buddyRepository.SendDeleteEvent(from_profile, to_profile);
-                    return true;
+                    success = true;
                 }
                 throw new ArgumentException();
             }
-            return await buddyRepository.Delete(lookupData);
+            
+            if(success == false)
+            {
+                success = await buddyRepository.Delete(lookupData);
+            }
+
+            if (success)
+            {
+                buddyRepository.SendDeleteEvent(from_profile, to_profile);
+            }
+            return success;
         }
         [HttpDelete("Block")]
         public async Task<bool> DeleteBlock([FromBody] BuddyLookup lookupData)
@@ -92,7 +102,6 @@ namespace CoreWeb.Controllers.Presence
 
             if (status_update)
             {
-                await presenceProfileStatusRepository.SendStatusUpdate(to_profile);
                 await presenceProfileStatusRepository.SendStatusUpdate(from_profile);
             }
         }

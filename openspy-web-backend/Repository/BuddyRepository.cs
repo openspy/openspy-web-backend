@@ -161,7 +161,7 @@ namespace CoreWeb.Repository
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    String message = String.Format("\\type\\{0]}\\from_profileid\\{1}\\to_profileid\\{2}", type, from.Id, to.Id);
+                    String message = String.Format("\\type\\{0}\\from_profileid\\{1}\\to_profileid\\{2}", type, from.Id, to.Id);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
                     IBasicProperties props = channel.CreateBasicProperties();

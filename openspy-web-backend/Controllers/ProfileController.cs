@@ -29,13 +29,6 @@ namespace CoreWeb.Controllers
             return await base.Update(value);
         }
 
-        // POST api/<controller>
-        [HttpPost("ReplaceProfile")]
-        public async Task<Profile> ReplaceProfile([FromBody]Profile value)
-        { 
-            return await base.Update(value);
-        }
-
         // PUT api/<controller>/5
         [HttpPut]
         public override async Task<Profile> Put([FromBody]Profile value)

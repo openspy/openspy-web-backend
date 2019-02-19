@@ -120,8 +120,12 @@ namespace CoreWeb.Repository
                 if (model.Namespaceid == 0 && model.Uniquenick.Length != 0)
                 {
                     model.Uniquenick = "";
+                } else
+                {
+                    await PerformUniqueNickChecks(model);
                 }
             }
+            await PerformNickChecks(model);
             model.User = null;
             var entry = gameTrackerDb.Add(model);
             var num_modified = await gameTrackerDb.SaveChangesAsync(true);

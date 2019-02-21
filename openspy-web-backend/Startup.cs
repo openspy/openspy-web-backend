@@ -48,7 +48,11 @@ namespace CoreWeb
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Persist"));
                 }));
-
+                options.AddPolicy("CDKeyManage", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
+                }));
+                
                 options.AddPolicy("GameManage", policy => policy.RequireClaim("role", "Admin"));
                 options.AddPolicy("GroupManage", policy => policy.RequireClaim("role", "Admin"));
 

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CoreWeb.Exception;
 using CoreWeb.Models;
+using CoreWeb.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,11 +20,9 @@ namespace CoreWeb.Controllers
     }
     public class CDKeyAssociateRequest
     {
-        
         public string cdkey;
         public ProfileLookup profileLookup;
         public GameLookup gameLookup;
-        public bool? abortIfExists;
     }
     public class CDKeySuccessResponse
     {
@@ -32,21 +32,40 @@ namespace CoreWeb.Controllers
     [Route("v1/[controller]")]
     public class CDKeyController : Controller
     {
-        [HttpPost("AssociateCDKeyToProfile")]
-        public Task<CDKeySuccessResponse> AssociateCDKeyToProfile(CDKeyAssociateRequest request)
+        public IRepository<Profile, ProfileLookup> profileRepository;
+        public CDKeyController(IRepository<Profile, ProfileLookup> profileRepository)
         {
-            throw new NotImplementedException();
+            this.profileRepository = profileRepository;
+        }
+        [HttpPost("AssociateCDKeyToProfile")]
+        public Task<CDKeySuccessResponse> AssociateCDKeyToProfile([FromBody] CDKeyAssociateRequest request)
+        {
+            return Task.Run(() =>
+            {
+                var resp = new CDKeySuccessResponse();
+                resp.success = true;
+                return resp;
+            });
         }
         [HttpPost("GetProfileByCDKey")]
-        public Task<Profile> GetProfileByCDKey(GetProfileByCDKeyRequest request)
+        public async Task<Profile> GetProfileByCDKey([FromBody] GetProfileByCDKeyRequest request)
         {
-            throw new NotImplementedException();
+            var lookup = new ProfileLookup();
+            lookup.id = 1;
+            var profile = (await profileRepository.Lookup(lookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+            return profile;
         }
 
         [HttpPost("TestCDKeyValid")]
-        public Task<CDKeySuccessResponse> TestCDKeyValid(GetProfileByCDKeyRequest request)
+        public Task<CDKeySuccessResponse> TestCDKeyValid([FromBody] GetProfileByCDKeyRequest request)
         {
-            throw new NotImplementedException();
+            return Task.Run(() =>
+            {
+                var resp = new CDKeySuccessResponse();
+                resp.success = true;
+                return resp;
+            });
         }
     }
 }

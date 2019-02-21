@@ -50,6 +50,7 @@ namespace CoreWeb.Controllers.Presence
         public User user;
         public String server_response;
         public String session_key;
+        public Session session;
         public bool success;
     };
     public class GenAuthTicketResponse {
@@ -160,7 +161,8 @@ namespace CoreWeb.Controllers.Presence
             }
 
             response.server_response = GetPasswordProof(response.profile, authRequest, ProofType.ProofType_PreAuth, false);
-            response.session_key = await generateSessionKey(response.profile);
+            response.session = await generateSessionKey(response.profile);
+            response.session_key = response.session.sessionKey;
             response.success = true;
             return response;
         }
@@ -208,7 +210,8 @@ namespace CoreWeb.Controllers.Presence
             response.server_response = GetPasswordProof(profile, authRequest, type, false);
             response.profile = profile;
             response.user = profile.User;
-            response.session_key = await generateSessionKey(profile);
+            response.session = await generateSessionKey(profile);
+            response.session_key = response.session.sessionKey;
             response.success = true;
             return response;
         }
@@ -299,11 +302,11 @@ namespace CoreWeb.Controllers.Presence
             }
             return md5String;
         }
-        private async Task<String> generateSessionKey(Profile profile)
+        private async Task<Session> generateSessionKey(Profile profile)
         {
             Session model = new Session();
             model.profile = profile;
-            return (await sessionRepository.Create(model)).sessionKey;
+            return (await sessionRepository.Create(model));
         }
     }
 }

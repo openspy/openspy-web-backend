@@ -9,6 +9,8 @@ using CoreWeb.Models;
 using CoreWeb.Repository;
 using CoreWeb.Exception;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
+using CoreWeb.Filters;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -42,14 +44,14 @@ namespace CoreWeb.Controllers.Presence
         /// <summary>
         /// The time the session will expire at (in seconds)
         /// </summary>
-        public int? expiresAtSeconds;
+        [JsonConverter(typeof(JsonTimeSpanConverter))]
+        public TimeSpan? expiresIn;
     };
     public class AuthResponse
     {
         public Profile profile;
         public User user;
         public String server_response;
-        public String session_key;
         public Session session;
         public bool success;
     };
@@ -92,10 +94,9 @@ namespace CoreWeb.Controllers.Presence
 
             DateTime expiresAt = DateTime.UtcNow.AddDays(1);
 
-            if(authRequest.expiresAtSeconds.HasValue)
+            if(authRequest.expiresIn.HasValue)
             {
-                TimeSpan ts = TimeSpan.FromSeconds(authRequest.expiresAtSeconds.Value);
-                expiresAt = expiresAt.Add(ts);
+                expiresAt = expiresAt.Add(authRequest.expiresIn.Value);
             }
 
             Tuple<String, String> ticket_data = await sessionRepository.generateAuthToken(profile, expiresAt);
@@ -162,7 +163,6 @@ namespace CoreWeb.Controllers.Presence
 
             response.server_response = GetPasswordProof(response.profile, authRequest, ProofType.ProofType_PreAuth, false);
             response.session = await generateSessionKey(response.profile);
-            response.session_key = response.session.sessionKey;
             response.success = true;
             return response;
         }
@@ -211,7 +211,6 @@ namespace CoreWeb.Controllers.Presence
             response.profile = profile;
             response.user = profile.User;
             response.session = await generateSessionKey(profile);
-            response.session_key = response.session.sessionKey;
             response.success = true;
             return response;
         }

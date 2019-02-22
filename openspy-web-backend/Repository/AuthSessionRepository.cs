@@ -37,11 +37,16 @@ namespace CoreWeb.Repository
         }
         public Task<bool> Delete(SessionLookup lookup)
         {
-            return null;
+            return Task.Run(() =>
+            {
+                return false;
+            });            
         }
-        public Task<Session> Update(Session model)
-        {
-            return null;
+        public Task<Session> Update(Session model) {
+            return Task.Run(() =>
+            {
+                return (Session)null;
+            });    
         }
 
         public async Task<Session> Create(Session model)

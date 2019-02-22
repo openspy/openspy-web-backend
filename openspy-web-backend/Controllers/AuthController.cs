@@ -8,6 +8,8 @@ using CoreWeb.Models;
 using CoreWeb.Repository;
 using CoreWeb.Exception;
 using Microsoft.AspNetCore.Authorization;
+using CoreWeb.Filters;
+using Newtonsoft.Json;
 
 namespace CoreWeb.Controllers
 {
@@ -20,14 +22,15 @@ namespace CoreWeb.Controllers
         {
             public Profile profile;
             public User user;
-            public String session_key;
+            public Session session;
         };
         public class AuthRequest
         {
             public ProfileLookup profileLookup;
             public UserLookup userLookup;
             public String password;
-            public int? expiresInSecs;
+            [JsonConverter(typeof(JsonTimeSpanConverter))]
+            public TimeSpan? expiresIn;
         };
 
         public class SessionDeleteResponse
@@ -48,39 +51,26 @@ namespace CoreWeb.Controllers
         [HttpPut("Session")]
         public async Task<Session> GenerateSession([FromBody]AuthRequest request)
         {
-            User user = null;
-            if (request.userLookup != null)
-            {
-                user = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
-                if (request.profileLookup != null)
-                {
-                    var userLookup = new UserLookup();
-                    userLookup.id = user.Id;
-                    request.profileLookup.user = userLookup;
-                }
-            }
-            if (user == null) throw new NoSuchUserException();
-
             Profile profile = null;
             if (request.profileLookup != null)
             {
                 profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
                 if (profile == null) throw new NoSuchUserException();
-
-                if (request.userLookup == null)
-                {
-                    request.userLookup = new UserLookup();
-                }
-                request.userLookup.id = profile.Userid;
             }
+
+            var userLookup = new UserLookup();
+            userLookup.id = profile.Userid;
+            User user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+             
+            if (user == null) throw new NoSuchUserException();
 
 
             Session sessionModel = new Session();
             sessionModel.profile = profile;
             sessionModel.user = user;
-            if (request.expiresInSecs.HasValue)
+            if (request.expiresIn.HasValue)
             {
-                sessionModel.expiresIn = TimeSpan.FromSeconds(request.expiresInSecs.Value);
+                sessionModel.expiresIn = request.expiresIn.Value;
             }
             return await this.sessionRepository.Create(sessionModel);
         }
@@ -134,10 +124,9 @@ namespace CoreWeb.Controllers
             Session session = new Session();
             session.profile = profile;
             session.user = user;
-            if(request.expiresInSecs.HasValue)
-                session.expiresIn = TimeSpan.FromSeconds(request.expiresInSecs.Value);
-            session = await sessionRepository.Create(session);
-            response.session_key = session.sessionKey;
+            if(request.expiresIn.HasValue)
+                session.expiresIn = request.expiresIn;
+            response.session = await sessionRepository.Create(session);
 
             return response;
         }

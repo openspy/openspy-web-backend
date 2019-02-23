@@ -8,8 +8,8 @@ namespace CoreWeb.Database
     public class KeymasterDBContext : DbContext
     {
         public virtual DbSet<CdKey> CdKey { get; set; }
-        public virtual DbSet<ProfileCdKeys> ProfileCdKey { get; set; }
-        public virtual DbSet<CdkeyRules> CdKeyRules { get; set; }
+        public virtual DbSet<ProfileCdKey> ProfileCdKey { get; set; }
+        public virtual DbSet<CdkeyRule> CdKeyRules { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -40,7 +40,7 @@ namespace CoreWeb.Database
                     .HasColumnType("int(11)");
             });
 
-            modelBuilder.Entity<ProfileCdKeys>(entity =>
+            modelBuilder.Entity<ProfileCdKey>(entity =>
             {
                 entity.ToTable("profile_cdkeys");
 
@@ -58,9 +58,13 @@ namespace CoreWeb.Database
                     .HasColumnType("int(11)");
             });
 
-            modelBuilder.Entity<CdkeyRules>(entity =>
+            modelBuilder.Entity<CdkeyRule>(entity =>
             {
-                entity.ToTable("profile_cdkeys");
+                entity.ToTable("cdkey_rules");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .HasColumnType("int(11)");
 
                 entity.Property(e => e.Gameid)
                     .HasColumnName("gameid")

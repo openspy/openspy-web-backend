@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 
 namespace CoreWeb.Models
 {
-    public class CdkeyRules
+    public class CdkeyRule
     {
+        public int Id { get; set; }
         public int Gameid { get; set; }
         public bool Failifnotfound { get; set; }
     }

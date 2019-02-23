@@ -32,40 +32,69 @@ namespace CoreWeb.Controllers
     [Route("v1/[controller]")]
     public class CDKeyController : Controller
     {
-        public IRepository<Profile, ProfileLookup> profileRepository;
-        public CDKeyController(IRepository<Profile, ProfileLookup> profileRepository)
+        private IRepository<Profile, ProfileLookup> profileRepository;
+        private IRepository<Game, GameLookup> gameRepository;
+        private CdKeyRepository cdkeyRepository;
+        public CDKeyController(IRepository<Profile, ProfileLookup> profileRepository, IRepository<CdKey, CdKeyLookup> cdkeyRepository, IRepository<Game, GameLookup> gameRepository)
         {
             this.profileRepository = profileRepository;
+            this.cdkeyRepository = (CdKeyRepository)cdkeyRepository;
+            this.gameRepository = gameRepository;
         }
         [HttpPost("AssociateCDKeyToProfile")]
-        public Task<CDKeySuccessResponse> AssociateCDKeyToProfile([FromBody] CDKeyAssociateRequest request)
+        public async Task<CDKeySuccessResponse> AssociateCDKeyToProfile([FromBody] CDKeyAssociateRequest request)
         {
-            return Task.Run(() =>
-            {
-                var resp = new CDKeySuccessResponse();
-                resp.success = true;
-                return resp;
-            });
+            var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+
+            var cdkeyLookup = new CdKeyLookup();
+            cdkeyLookup.Cdkey = request.cdkey;
+            cdkeyLookup.Gameid = game.Id;
+
+            var resp = new CDKeySuccessResponse();
+
+            resp.success = await cdkeyRepository.AssociateCDKeyToProfile(cdkeyLookup, profile);
+            return resp;
         }
         [HttpPost("GetProfileByCDKey")]
         public async Task<Profile> GetProfileByCDKey([FromBody] GetProfileByCDKeyRequest request)
         {
-            var lookup = new ProfileLookup();
-            lookup.id = 1;
-            var profile = (await profileRepository.Lookup(lookup)).FirstOrDefault();
-            if (profile == null) throw new NoSuchUserException();
-            return profile;
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+
+            var cdkeyLookup = new CdKeyLookup();
+            cdkeyLookup.Gameid = game.Id;
+            cdkeyLookup.Cdkey = request.cdkey;
+
+            return await cdkeyRepository.LookupProfileFromCDKey(cdkeyLookup);
         }
 
         [HttpPost("TestCDKeyValid")]
-        public Task<CDKeySuccessResponse> TestCDKeyValid([FromBody] GetProfileByCDKeyRequest request)
+        public async Task<CDKeySuccessResponse> TestCDKeyValid([FromBody] GetProfileByCDKeyRequest request)
         {
-            return Task.Run(() =>
+            var resp = new CDKeySuccessResponse();
+
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+
+            var lookupRequest = new CdKeyLookup();
+            lookupRequest.Cdkey = request.cdkey;
+            lookupRequest.Gameid = game.Id;
+
+            var failIfNotFound = await cdkeyRepository.LookupFailItNotFound(lookupRequest);
+            if(failIfNotFound == false)
             {
-                var resp = new CDKeySuccessResponse();
                 resp.success = true;
                 return resp;
-            });
+            }
+
+            var keys = await cdkeyRepository.Lookup(lookupRequest);
+
+            resp.success = keys.Count() > 0;
+            return resp;
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CoreWeb.Models
 {
-    public class ProfileCdKeys
+    public class ProfileCdKey
     {
         public int Id { get; set; }
         public int Cdkeyid { get; set; }

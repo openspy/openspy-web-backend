@@ -32,7 +32,6 @@ namespace CoreWeb.Repository
                 var results = await gameMasterDb.Game.ToListAsync();
                 return results;
             }
-            return null;
         }
         public Task<bool> Delete(GameLookup lookup)
         {

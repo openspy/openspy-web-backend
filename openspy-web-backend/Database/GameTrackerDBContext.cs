@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using CoreWeb.Models;
+using Microsoft.Extensions.Logging;
 
 namespace CoreWeb.Database
 {
@@ -14,10 +15,17 @@ namespace CoreWeb.Database
         public virtual DbSet<PersistData> PersistData { get; set; }
         public virtual DbSet<PersistKeyedData> PersistKeyedData { get; set; }
 
+        public static readonly Microsoft.Extensions.Logging.LoggerFactory _myLoggerFactory =
+        new LoggerFactory(new[] {
+new Microsoft.Extensions.Logging.Debug.DebugLoggerProvider()
+        });
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-               #warning To protect potentially sensitive information in your connection string, you should move it out of source code.See http://go.microsoft.com/fwlink/?LinkId=723263  for guidance on storing connection strings.
-               optionsBuilder.UseMySQL("server=localhost;database=GameTracker;user=CHC;password=123321");
+            #warning To protect potentially sensitive information in your connection string, you should move it out of source code.See http://go.microsoft.com/fwlink/?LinkId=723263  for guidance on storing connection strings.
+            optionsBuilder.UseMySQL("server=localhost;database=GameTracker;user=CHC;password=123321");
+            optionsBuilder.EnableSensitiveDataLogging(true);
+            optionsBuilder.UseLoggerFactory(_myLoggerFactory);
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

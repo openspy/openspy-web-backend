@@ -31,8 +31,8 @@ namespace CoreWeb.Database
                     .HasColumnName("cdkey")
                     .HasColumnType("text");
 
-                entity.Property(e => e.UserInserted)
-                    .HasColumnName("user_inserted")
+                entity.Property(e => e.InsertedByUser)
+                    .HasColumnName("inserted_by_user")
                     .HasColumnType("tinyint(1)");
 
                 entity.Property(e => e.Gameid)

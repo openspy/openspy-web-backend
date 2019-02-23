@@ -15,8 +15,8 @@ namespace CoreWeb.Controllers
     public class GetProfileByCDKeyRequest
     {
         public string cdkey;
-        public string cdkeyMD5Hash;
         public GameLookup gameLookup;
+        public ProfileLookup profileLookup;
     }
     public class CDKeyAssociateRequest
     {
@@ -70,6 +70,19 @@ namespace CoreWeb.Controllers
             cdkeyLookup.Cdkey = request.cdkey;
 
             return await cdkeyRepository.LookupProfileFromCDKey(cdkeyLookup);
+        }
+
+        [HttpPost("GetCDKeyByProfile")]
+        public async Task<CdKey> GetCDKeyByProfile([FromBody] GetProfileByCDKeyRequest request)
+        {
+            var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
+            if (game == null) throw new ArgumentException();
+
+            var cdkeyLookup = new CdKeyLookup();
+            cdkeyLookup.Gameid = game.Id;
+            cdkeyLookup.profileLookup = request.profileLookup;
+
+            return await cdkeyRepository.LookupCDKeyFromProfile(cdkeyLookup);
         }
 
         [HttpPost("TestCDKeyValid")]

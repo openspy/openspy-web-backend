@@ -1,7 +1,7 @@
 ﻿using CoreWeb.Database;
 using CoreWeb.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
+using CoreWeb.Exception;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -78,7 +78,18 @@ namespace CoreWeb.Repository
         public async Task<bool> AssociateCDKeyToProfile(CdKeyLookup cdKeyLookup, Profile profile)
         {
             var cdkeyResults = (await Lookup(cdKeyLookup)).FirstOrDefault();
-            if (cdkeyResults == null) return false;
+            if (cdkeyResults == null)
+            {
+                var failIfNotFound = await LookupFailItNotFound(cdKeyLookup);
+                if(failIfNotFound || !cdKeyLookup.Gameid.HasValue)
+                    return false;
+
+                var insertRequest = new CdKey();
+                insertRequest.InsertedByUser = true;
+                insertRequest.Gameid = cdKeyLookup.Gameid.Value;
+                insertRequest.Cdkey = cdKeyLookup.Cdkey;
+                cdkeyResults = await Create(insertRequest);
+            }
 
             var cdkeyAssociation = new ProfileCdKey();
             cdkeyAssociation.Cdkeyid = cdkeyResults.Id;
@@ -99,6 +110,26 @@ namespace CoreWeb.Repository
 
             profileLookup.id = profileResults.Profileid;
             return (await profileRepository.Lookup(profileLookup)).FirstOrDefault();
+        }
+
+        public async Task<CdKey> LookupCDKeyFromProfile(CdKeyLookup lookup)
+        {
+            var profile = (await profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
+            if (profile == null) throw new NoSuchUserException();
+
+            //TODO: clean this up into linq join query
+            var profile_cdkey_records = await keyMasterDb.ProfileCdKey.Where(b => b.Profileid == profile.Id).ToListAsync();
+            foreach(var record in profile_cdkey_records)
+            {
+                var cdkeyLookup = new CdKeyLookup();
+                cdkeyLookup.Id = record.Cdkeyid;
+                var cdkey = (await Lookup(cdkeyLookup)).FirstOrDefault();
+                if(cdkey.Gameid == lookup.Gameid)
+                {
+                    return cdkey;
+                }
+            }
+            return null;
         }
     }
 }

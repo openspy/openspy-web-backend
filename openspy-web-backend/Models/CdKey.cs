@@ -9,13 +9,14 @@ namespace CoreWeb.Models
     {
         public int? Id { get; set; }
         public String Cdkey { get; set; }
+        public ProfileLookup profileLookup;
         public int? Gameid { get; set; }
     };
     public class CdKey
     {
         public int Id { get; set; }
         public String Cdkey { get; set; }
-        public bool UserInserted { get; set; }
+        public bool InsertedByUser { get; set; }
         public int Gameid { get; set; }
     }
 }

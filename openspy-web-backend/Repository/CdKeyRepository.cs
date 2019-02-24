@@ -81,8 +81,8 @@ namespace CoreWeb.Repository
             if (cdkeyResults == null)
             {
                 var failIfNotFound = await LookupFailItNotFound(cdKeyLookup);
-                if(failIfNotFound || !cdKeyLookup.Gameid.HasValue)
-                    return false;
+                if (failIfNotFound || !cdKeyLookup.Gameid.HasValue)
+                    throw new BadCdKeyException();
 
                 var insertRequest = new CdKey();
                 insertRequest.InsertedByUser = true;

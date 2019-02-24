@@ -95,6 +95,7 @@ namespace CoreWeb
 
             services.AddDbContext<GameTrackerDBContext>();
             services.AddDbContext<GamemasterDBContext>();
+            services.AddDbContext<KeymasterDBContext>();
 
 
             var multiplexer = ConnectionMultiplexer.Connect("localhost,allowAdmin=true");
@@ -113,6 +114,7 @@ namespace CoreWeb
             services.AddScoped<IRepository<PresenceProfileStatus, PresenceProfileLookup>, PresenceProfileStatusRepository>();
             services.AddScoped<IRepository<PersistKeyedData, PersistKeyedDataLookup>, PersistKeyedDataRepository>();
             services.AddScoped<IRepository<PersistData, PersistDataLookup>, PersistDataRepository>();
+            services.AddScoped<IRepository<CdKey, CdKeyLookup>, CdKeyRepository>();
 
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
             services.AddScoped<ISnapShotDBContext, SnapShotDBContext>(c => new SnapShotDBContext("mongodb://localhost:27017"));

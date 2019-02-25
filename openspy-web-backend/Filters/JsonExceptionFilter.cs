@@ -6,12 +6,14 @@ using Microsoft.Extensions.Configuration;
 
 public class JsonExceptionFilter : IExceptionFilter
 {
-    private IConfiguration configuraiton;
+    private IConfiguration configuration;
     private bool development;
     public JsonExceptionFilter(IConfiguration configuration)
     {
-        this.configuraiton = configuraiton;
-        development = configuraiton.GetValue<string>("ASPNETCORE_ENVIRONMENT").CompareTo("development") == 0;
+        this.configuration = configuration;
+        var dev_settings = configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT");
+        if(dev_settings != null)
+            development = dev_settings.CompareTo("development") == 0;
     }
     public void OnException(ExceptionContext context)
     {

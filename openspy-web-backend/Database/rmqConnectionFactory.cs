@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Microsoft.Extensions.Configuration;
+using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,15 +9,17 @@ namespace CoreWeb.Database
 {
     public class rmqConnectionFactory : IMQConnectionFactory
     {
+
+        private IConfiguration configuration;
+
+        public rmqConnectionFactory(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         public ConnectionFactory Get()
         {
-            UriBuilder uriBuilder = new UriBuilder();
-            uriBuilder.UserName = "guest";
-            uriBuilder.Password = "guest";
-            uriBuilder.Host = "localhost";
-            uriBuilder.Port = 5672;
-            uriBuilder.Path = "/";
-            uriBuilder.Scheme = "amqp";
+            UriBuilder uriBuilder = new UriBuilder(configuration.GetConnectionString("rmqConnection"));
             return new ConnectionFactory
             {
                 Uri = uriBuilder.Uri

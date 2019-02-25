@@ -219,7 +219,11 @@ namespace CoreWeb.Controllers.Presence
         {
             List<String> challenges = new List<String>();
             StringBuilder sb = new StringBuilder();
-            var password = profile.User.Password;
+            string password = null;
+            if (profile != null && profile.User != null)
+            {
+                password = profile.User.Password;
+            }
             switch (type)
             {
                 case ProofType.ProofType_NickEmail:

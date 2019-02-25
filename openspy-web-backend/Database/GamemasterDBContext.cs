@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using CoreWeb.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreWeb.Database
 {
@@ -10,10 +11,17 @@ namespace CoreWeb.Database
         public virtual DbSet<Game> Game { get; set; }
         public virtual DbSet<Group> Group { get; set; }
 
+        private IConfiguration configuration;
+
+        public GamemasterDBContext(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
                #warning To protect potentially sensitive information in your connection string, you should move it out of source code.See http://go.microsoft.com/fwlink/?LinkId=723263  for guidance on storing connection strings.
-               optionsBuilder.UseMySQL("server=localhost;database=Gamemaster;user=CHC;password=123321");
+               optionsBuilder.UseMySQL(configuration.GetConnectionString("GamemasterDB"));
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

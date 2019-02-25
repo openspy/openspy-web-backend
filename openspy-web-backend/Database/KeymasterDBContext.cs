@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using CoreWeb.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreWeb.Database
 {
@@ -10,11 +11,16 @@ namespace CoreWeb.Database
         public virtual DbSet<CdKey> CdKey { get; set; }
         public virtual DbSet<ProfileCdKey> ProfileCdKey { get; set; }
         public virtual DbSet<CdkeyRule> CdKeyRules { get; set; }
+        private IConfiguration configuration;
+
+        public KeymasterDBContext(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-               #warning To protect potentially sensitive information in your connection string, you should move it out of source code.See http://go.microsoft.com/fwlink/?LinkId=723263  for guidance on storing connection strings.
-               optionsBuilder.UseMySQL("server=localhost;database=Keymaster;user=CHC;password=123321");
+               optionsBuilder.UseMySQL(configuration.GetConnectionString("KeymasterDB"));
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

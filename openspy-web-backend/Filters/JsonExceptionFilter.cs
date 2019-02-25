@@ -2,9 +2,17 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using CoreWeb.Exception;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 public class JsonExceptionFilter : IExceptionFilter
 {
+    private IConfiguration configuraiton;
+    private bool development;
+    public JsonExceptionFilter(IConfiguration configuration)
+    {
+        this.configuraiton = configuraiton;
+        development = configuraiton.GetValue<string>("ASPNETCORE_ENVIRONMENT").CompareTo("development") == 0;
+    }
     public void OnException(ExceptionContext context)
     {
         if (context.Exception.GetType().IsSubclassOf(typeof(IApplicationException)))
@@ -17,7 +25,15 @@ public class JsonExceptionFilter : IExceptionFilter
             context.Result = new ObjectResult(new { error });
         } else
         {
-            context.Result = new ObjectResult(new { context.Exception.Message, context.Exception.StackTrace });
+            if(development)
+            {
+                context.Result = new ObjectResult(new { context.Exception.Message, context.Exception.StackTrace });
+            } else
+            {
+                var error = "Fatal Error";
+                context.Result = new ObjectResult(new { error});
+            }
+            
         }
     }
 

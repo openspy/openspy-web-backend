@@ -33,7 +33,9 @@ public class JsonExceptionFilter : IExceptionFilter
         {
             if(development)
             {
-                context.Result = new ObjectResult(new { context.Exception.Message, context.Exception.StackTrace });
+
+                //context.Result = new ObjectResult(new { context.Exception.Message, context.Exception.StackTrace });
+                HandleException(context, new InternalErrorException(context.Exception));
             } else
             {
                 HandleException(context, new InternalErrorException());

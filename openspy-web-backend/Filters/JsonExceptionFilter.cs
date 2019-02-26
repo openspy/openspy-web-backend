@@ -13,18 +13,22 @@ public class JsonExceptionFilter : IExceptionFilter
         this.configuration = configuration;
         var dev_settings = configuration.GetValue<string>("ASPNETCORE_ENVIRONMENT");
         if(dev_settings != null)
-            development = dev_settings.CompareTo("development") == 0;
+            development = dev_settings.ToLower().CompareTo("development") == 0;
+    }
+    private void HandleException(ExceptionContext context, IApplicationException exception)
+    {
+        Dictionary<string, object> error = new Dictionary<string, object>();
+        error["class"] = exception._class;
+        error["name"] = exception._name;
+        error["extra"] = exception.extraData;
+        context.Result = new ObjectResult(new { error });
     }
     public void OnException(ExceptionContext context)
     {
         if (context.Exception.GetType().IsSubclassOf(typeof(IApplicationException)))
         {
             IApplicationException exception = (IApplicationException)context.Exception;
-            Dictionary<string, object> error = new Dictionary<string, object>();
-            error["class"] = exception._class;
-            error["name"] = exception._name;
-            error["extra"] = exception.extraData;
-            context.Result = new ObjectResult(new { error });
+            HandleException(context, exception);
         } else
         {
             if(development)
@@ -32,8 +36,7 @@ public class JsonExceptionFilter : IExceptionFilter
                 context.Result = new ObjectResult(new { context.Exception.Message, context.Exception.StackTrace });
             } else
             {
-                var error = "Fatal Error";
-                context.Result = new ObjectResult(new { error});
+                HandleException(context, new InternalErrorException());
             }
             
         }

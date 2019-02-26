@@ -50,6 +50,14 @@ namespace CoreWeb.Controllers
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
             if (game == null) throw new ArgumentException();
 
+
+            var profileCdKeyLookup = new CdKeyLookup();
+            profileCdKeyLookup.Gameid = game.Id;
+            profileCdKeyLookup.profileLookup = request.profileLookup;
+
+            var cdKeyData  = await cdkeyRepository.LookupCDKeyFromProfile(profileCdKeyLookup);
+            if (cdKeyData != null) throw new CdKeyAlreadySetException();
+
             var cdkeyLookup = new CdKeyLookup();
             cdkeyLookup.Cdkey = request.cdkey;
             cdkeyLookup.Gameid = game.Id;

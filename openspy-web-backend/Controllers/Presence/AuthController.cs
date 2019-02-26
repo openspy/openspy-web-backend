@@ -33,6 +33,11 @@ namespace CoreWeb.Controllers.Presence
         public String auth_token;
 
         /// <summary>
+        /// Login ticket to be used for auth
+        /// </summary>
+        public String login_ticket;
+
+        /// <summary>
         /// User data to perform auth against (Used for Nick/Unique nick auth)
         /// </summary>
         public UserLookup user;
@@ -65,6 +70,7 @@ namespace CoreWeb.Controllers.Presence
         ProofType_NickEmail,
         ProofType_Unique,
         ProofType_PreAuth,
+        ProofType_LoginTicket
     };
 
 
@@ -177,6 +183,24 @@ namespace CoreWeb.Controllers.Presence
             return handleAuthRequest(authRequest, ProofType.ProofType_Unique);
         }
 
+        [HttpPost("LoginTicketAuth")]
+        public async Task<AuthResponse> LoginTicketAuth([FromBody] AuthRequest authRequest)
+        {
+            var sessionLookup = new SessionLookup();
+            sessionLookup.sessionKey = authRequest.login_ticket;
+            var session = (await sessionRepository.Lookup(sessionLookup)).FirstOrDefault();
+            if (session == null) throw new AuthInvalidCredentialsException();
+            var response = new AuthResponse();
+            var proof = GetPasswordProof(session.profile, authRequest, ProofType.ProofType_LoginTicket, true);
+            if(proof.CompareTo(authRequest.client_response) != 0) throw new AuthInvalidCredentialsException();
+            response.server_response = GetPasswordProof(session.profile, authRequest, ProofType.ProofType_LoginTicket, false);
+            response.profile = session.profile;
+            response.user = session.user;
+            response.session = await generateSessionKey(response.profile);
+            response.success = true;
+            return response;
+        }
+
         private async Task<AuthResponse> handleAuthRequest(AuthRequest authRequest, ProofType type)
         {
             AuthResponse response = new AuthResponse();
@@ -257,6 +281,10 @@ namespace CoreWeb.Controllers.Presence
                 case ProofType.ProofType_PreAuth:
                     password = request.client_response;
                     sb.Append(request.auth_token);
+                    break;
+                case ProofType.ProofType_LoginTicket:
+                    password = request.login_ticket;
+                    sb.Append(request.login_ticket);
                     break;
             }
             if (client_to_server)

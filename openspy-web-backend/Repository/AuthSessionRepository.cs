@@ -31,9 +31,28 @@ namespace CoreWeb.Repository
             this.rsaProvider = rsaProvider;
             this.sessionCache = sessionCache;
         }
-        public Task<IEnumerable<Session>> Lookup(SessionLookup lookup)
+        public async Task<IEnumerable<Session>> Lookup(SessionLookup lookup)
         {
-            return null;
+            var db = sessionCache.GetDatabase();
+            var result = db.HashGet(lookup.sessionKey.ToString(), "guid");
+            if (!result.HasValue) return null;
+            var session = new Session();
+            session.sessionKey = result.ToString();
+            var profileId = db.HashGet(lookup.sessionKey.ToString(), "profileid");
+            var userId = db.HashGet(lookup.sessionKey.ToString(), "userid");
+
+            var profileLookup = new ProfileLookup();
+            profileLookup.id = int.Parse(profileId.ToString());
+            session.profile = (await profileRepository.Lookup(profileLookup)).FirstOrDefault();
+
+            var userLookup = new UserLookup();
+            userLookup.id = int.Parse(userId.ToString());
+            session.user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+
+            var ret = new List<Session>();
+            ret.Add(session);
+
+            return ret;
         }
         public Task<bool> Delete(SessionLookup lookup)
         {

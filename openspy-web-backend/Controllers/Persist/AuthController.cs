@@ -35,12 +35,14 @@ namespace CoreWeb.Controllers.Persist
         IRepository<User, UserLookup> userRepository;
         IRepository<Profile, ProfileLookup> profileRepository;
         IRepository<Game, GameLookup> gameRepository;
-        public AuthController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository)
+        AuthSessionRepository sessionRepository;
+        public AuthController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IRepository<Session, SessionLookup> sessionRepository)
         {
 
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;
+            this.sessionRepository = (AuthSessionRepository)sessionRepository;
         }
         private string gs_sesskey(System.Int32 sesskey)
         {
@@ -94,36 +96,59 @@ namespace CoreWeb.Controllers.Persist
             throw new AuthInvalidCredentialsException();
         }
 
-        /*
-             def test_gstats_sessionkey_response_auth_token(self, request_body, account_data):
-        response = {}
-
-        token = request_body['auth_token']
-
-        if not self.redis_ctx.exists("auth_token_{}".format(token)):
-            raise OS_Auth_InvalidCredentials()
-
-        profileid = int(self.redis_ctx.hget("auth_token_{}".format(token), 'profileid'))
-        profile = self.get_profile_by_id(profileid)
-        user = self.get_user_by_userid(profile.userid)
-        challenge = self.redis_ctx.hget("auth_token_{}".format(token), 'challenge').decode('utf-8')
-        challenge = str(challenge).encode('utf-8')
-
-        sess_key = self.gs_sesskey(request_body["session_key"])
-
-        pw_hashed = "{}{}".format(challenge,sess_key).encode('utf-8')
-        pw_hashed = hashlib.md5(pw_hashed).hexdigest()
-
-        response["success"] = pw_hashed == request_body["client_response"]       
-
-        response['profile'] = model_to_dict(profile)
-        response['user'] = model_to_dict(user)
-        return response
-         */
         [HttpPost("PreAuth")]
-        public void PreAuth([FromBody] AuthRequest request)
+        public async Task<AuthResponse> PreAuth([FromBody] AuthRequest request)
         {
-            throw new NotImplementedException();
+            Dictionary<string, string> dict = await sessionRepository.decodeAuthToken(request.auth_token);
+            if (dict == null) throw new AuthInvalidCredentialsException();
+            var response = new AuthResponse();
+            ProfileLookup profileLookup = new ProfileLookup();
+            UserLookup userLookup = new UserLookup();
+            int profileId;
+
+            int.TryParse(dict["profileId"], out profileId);
+            profileLookup.id = profileId;
+
+
+            User user = null;
+            if (dict.ContainsKey("userId"))
+            {
+                int.TryParse(dict["userId"], out profileId);
+                userLookup.id = profileId;
+                user = (await userRepository.Lookup(userLookup)).First();
+            }
+
+            response.profile = (await profileRepository.Lookup(profileLookup)).First();
+
+            if (user == null)
+            {
+                userLookup.id = response.profile.Userid;
+                user = (await userRepository.Lookup(userLookup)).First();
+            }
+
+            response.user = user;
+
+
+            var sesskey = gs_sesskey(request.session_key);
+
+            string challenge = dict["true_signature"] + sesskey.ToString();
+            using(MD5 md5 = MD5.Create())
+            {
+                StringBuilder sBuilder = new StringBuilder();
+                byte[] data = md5.ComputeHash(Encoding.UTF8.GetBytes(challenge));
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2"));
+                }
+                challenge = sBuilder.ToString().ToLower();
+            }
+
+            if (!challenge.Equals(request.client_response.ToLower()))
+            {
+                throw new AuthInvalidCredentialsException();
+            }
+
+            return response;
         }
 
         [HttpPost("CDKeyAuth")]

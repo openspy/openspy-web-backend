@@ -37,6 +37,11 @@ namespace CoreWeb.Database
                     .HasColumnName("cdkey")
                     .HasColumnType("text");
 
+                entity.Property(e => e.CdkeyHash)
+                    .IsRequired()
+                    .HasColumnName("cdkeyMD5Hash")
+                    .HasColumnType("text");
+
                 entity.Property(e => e.InsertedByUser)
                     .HasColumnName("inserted_by_user")
                     .HasColumnType("tinyint(1)");

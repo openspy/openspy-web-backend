@@ -9,6 +9,7 @@ namespace CoreWeb.Models
     {
         public int? Id { get; set; }
         public String Cdkey { get; set; }
+        public String CdkeyHash { get; set; }
         public ProfileLookup profileLookup;
         public int? Gameid { get; set; }
     };
@@ -16,6 +17,7 @@ namespace CoreWeb.Models
     {
         public int Id { get; set; }
         public String Cdkey { get; set; }
+        public String CdkeyHash { get; set; }
         public bool InsertedByUser { get; set; }
         public int Gameid { get; set; }
     }

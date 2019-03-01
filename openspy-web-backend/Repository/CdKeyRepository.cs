@@ -5,6 +5,8 @@ using CoreWeb.Exception;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CoreWeb.Repository
 {
@@ -19,6 +21,16 @@ namespace CoreWeb.Repository
         }
         public async Task<CdKey> Create(CdKey model)
         {
+            using(MD5 md5 = MD5.Create())
+            {
+                StringBuilder sBuilder = new StringBuilder();
+                byte[] data = md5.ComputeHash(Encoding.UTF8.GetBytes(model.Cdkey));
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2"));
+                }
+                model.CdkeyHash = sBuilder.ToString();
+            }
             var entry = await keyMasterDb.AddAsync<CdKey>(model);
             var num_modified = await keyMasterDb.SaveChangesAsync();
             return entry.Entity;
@@ -47,6 +59,10 @@ namespace CoreWeb.Repository
             } else if(lookup.Cdkey != null)
             {
                 var results = await keyMasterDb.CdKey.Where(b => b.Cdkey == lookup.Cdkey && b.Gameid == lookup.Gameid).ToListAsync();
+                return results;
+            } else if(lookup.CdkeyHash != null)
+            {
+                var results = await keyMasterDb.CdKey.Where(b => b.CdkeyHash == lookup.CdkeyHash && b.Gameid == lookup.Gameid).ToListAsync();
                 return results;
             }
             else

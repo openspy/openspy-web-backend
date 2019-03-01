@@ -337,6 +337,11 @@ namespace CoreWeb.Controllers.Presence
         {
             Session model = new Session();
             model.profile = profile;
+            Microsoft.Extensions.Primitives.StringValues value;
+            if(HttpContext.Request.Headers.TryGetValue("X-OpenSpy-App", out value))
+            {
+                model.appName = value;
+            }
             return (await sessionRepository.Create(model));
         }
     }

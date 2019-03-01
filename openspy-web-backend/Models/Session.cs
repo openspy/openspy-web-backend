@@ -21,5 +21,7 @@ namespace CoreWeb.Models
         [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime? expiresAt;
         public String sessionKey;
+
+        public string appName;
     };
 }

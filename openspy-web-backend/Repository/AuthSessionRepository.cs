@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using CoreWeb.Crypto;
+using RabbitMQ.Client;
 
 namespace CoreWeb.Repository
 {
@@ -21,6 +22,9 @@ namespace CoreWeb.Repository
         private PresencePreAuthProvider rsaProvider;
         private TimeSpan defaultTimeSpan;
         private SessionCacheDatabase sessionCache;
+
+        private readonly string AUTHSESSION_EXCHANGE = "openspy.core";
+        private readonly string AUTHSESSION_ROUTING_KEY = "auth.events";
         public AuthSessionRepository(SessionCacheDatabase sessionCache, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, PresencePreAuthProvider rsaProvider)
         {
             this.defaultTimeSpan = TimeSpan.FromHours(2);
@@ -49,6 +53,8 @@ namespace CoreWeb.Repository
             userLookup.id = int.Parse(userId.ToString());
             session.user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
 
+            session.appName = db.HashGet(lookup.sessionKey.ToString(), "appName");
+
             var ret = new List<Session>();
             ret.Add(session);
 
@@ -74,6 +80,7 @@ namespace CoreWeb.Repository
             var session_key = generateSessionKey();
             var db = sessionCache.GetDatabase();
             db.HashSet(session_key.ToString(), "guid", session_key.ToString());
+            db.HashSet(session_key.ToString(), "appName", model.appName);
             if (model.profile != null && model.profile.Id != 0)
             {
                 db.HashSet(session_key.ToString(), "profileid", model.profile.Id.ToString());
@@ -100,12 +107,12 @@ namespace CoreWeb.Repository
                 lookup.id = model.profile.Id;
                 session.profile = (await this.profileRepository.Lookup(lookup)).ToList().First();
             }
-
+            session.appName = model.appName;
             session.expiresIn = model.expiresIn ?? this.defaultTimeSpan;
             session.expiresAt = DateTime.Now.Add(model.expiresIn ?? this.defaultTimeSpan);
             session.sessionKey = session_key;
             db.KeyExpire(session_key.ToString(), model.expiresIn ?? this.defaultTimeSpan);
-            SendLoginEvent();
+            SendLoginEvent(session);
             return session;
         }
         private String generateSessionKey()
@@ -125,9 +132,22 @@ namespace CoreWeb.Repository
             }
             return md5String;
         }
-        private void SendLoginEvent()
+        private void SendLoginEvent(Session model)
         {
+            ConnectionFactory factory = mqConnectionFactory.Get();
             //post MQ message with peer app name/addr
+            using (IConnection connection = factory.CreateConnection())
+            {
+                using (IModel channel = connection.CreateModel())
+                {
+                    String message = String.Format("\\type\\auth_event\\app_name\\{0}\\session_key\\{1}\\profileid\\{2}", model.appName, model.sessionKey, model.profile.Id);
+                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
+
+                    IBasicProperties props = channel.CreateBasicProperties();
+                    props.ContentType = "text/plain";
+                    channel.BasicPublish(AUTHSESSION_EXCHANGE, AUTHSESSION_ROUTING_KEY, props, messageBodyBytes);
+                }
+            }
         }
 
         public Task<Dictionary<string, string>> decodeAuthToken(String token)

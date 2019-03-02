@@ -14,9 +14,10 @@ namespace CoreWeb.Controllers
     [Authorize(Policy = "GroupManage")]
     public class GroupController : ModelController<Group, GroupLookup>
     {
+        GroupRepository groupRepository;
         public GroupController(IRepository<Group, GroupLookup> repository) : base(repository)
         {
-
+            groupRepository = (GroupRepository)repository;
         }
         [HttpPost("lookup")]
         [Authorize(Policy = "CoreService")]
@@ -30,5 +31,11 @@ namespace CoreWeb.Controllers
 
         [HttpDelete]
         public override Task<DeleteStatus> Delete([FromBody]GroupLookup value) => base.Delete(value);
+
+        [HttpPost("SyncToRedis")]
+        public async Task SyncToRedis()
+        {
+            await groupRepository.SyncToRedis();
+        }
     }
 }

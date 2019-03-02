@@ -11,9 +11,13 @@ namespace CoreWeb.Repository
     public class GroupRepository : IRepository<Group, GroupLookup>
     {
         private GamemasterDBContext gameMasterDb;
-        public GroupRepository(GamemasterDBContext gameMasterDb)
+        private GroupCacheDatabase groupCacheDatabase;
+        private IRepository<Game, GameLookup> gameRepository;
+        public GroupRepository(GamemasterDBContext gameMasterDb, IRepository<Game, GameLookup> gameRepository, GroupCacheDatabase gameCacheDatabase)
         {
+            this.gameRepository = gameRepository;
             this.gameMasterDb = gameMasterDb;
+            this.groupCacheDatabase = gameCacheDatabase;
         }
         public async Task<IEnumerable<Group>> Lookup(GroupLookup lookup)
         {
@@ -25,6 +29,9 @@ namespace CoreWeb.Repository
             {
                 var results = await gameMasterDb.Group.Where(b => b.Gameid == lookup.gameid).ToListAsync();
                 return results;
+            } else
+            {
+                return await gameMasterDb.Group.ToListAsync();
             }
             return null;
         }
@@ -55,6 +62,44 @@ namespace CoreWeb.Repository
             var entry = await gameMasterDb.AddAsync<Group>(model);
             var num_modified = await gameMasterDb.SaveChangesAsync();
             return entry.Entity;
+        }
+        public async Task SyncToRedis()
+        {
+            var db = groupCacheDatabase.GetDatabase();
+            var lookup = new GroupLookup();
+            var groups = await Lookup(lookup);
+
+            groupCacheDatabase.FlushDatabase();
+
+            foreach (var group in groups)
+            {
+                var gamelookup = new GameLookup();
+                gamelookup.id = group.Gameid;
+                var game = (await gameRepository.Lookup(gamelookup)).FirstOrDefault();
+                if (game == null) continue;
+                var group_key = game.Gamename + ":" + group.Groupid + ":";
+                db.HashSet(group_key, "gameid", group.Gameid.ToString());
+                db.HashSet(group_key, "groupid", group.Groupid.ToString());
+                db.HashSet(group_key, "maxwaiting", group.Maxwaiting.ToString());
+                db.HashSet(group_key, "hostname", group.Name.ToString());
+
+                var custkey_name = group_key + "custkeys";
+
+                if (group.Other == null || group.Other.Length == 0) continue;
+
+                var keys = group.Other.Substring(1).Split('\\');
+                string key = "";
+                for(int i=0;i<keys.Length;i++)
+                {
+                    if(i % 2 != 0)
+                    {
+                        db.HashSet(custkey_name, key, keys[i]);
+                    } else
+                    {
+                        key = keys[i];
+                    }
+                }
+            }
         }
     }
 }

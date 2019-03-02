@@ -140,7 +140,7 @@ namespace CoreWeb.Repository
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    String message = String.Format("\\type\\auth_event\\app_name\\{0}\\session_key\\{1}\\profileid\\{2}", model.appName, model.sessionKey, model.profile.Id);
+                    String message = String.Format("\\type\\auth_event\\app_name\\{0}\\session_key\\{1}\\profileid\\{2}\\userid\\{3}", model.appName, model.sessionKey, model.profile.Id, model.profile.Userid);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
                     IBasicProperties props = channel.CreateBasicProperties();

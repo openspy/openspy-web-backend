@@ -183,7 +183,6 @@ namespace CoreWeb.Controllers.Persist
                     return await persistRepository.Create(data);
                 }
             }
-            return null;
         }
 
         [HttpPost("GetData")]

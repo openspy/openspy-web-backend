@@ -36,7 +36,7 @@ namespace CoreWeb
         {
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
+options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
                 }));
@@ -79,6 +79,10 @@ namespace CoreWeb
                 options.AddPolicy("APIKeyManage", policy => policy.RequireAssertion(context =>
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin"));
+                }));
+                options.AddPolicy("GeoAccess", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
                 }));
             });
             services.AddAuthentication("ApiKeyAuth").AddScheme<ApiKeyAuthOpts, ApiKeyAuthHandler>("ApiKeyAuth", "ApiKeyAuth", opts => { });

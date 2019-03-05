@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CoreWeb.Filters;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -46,6 +47,8 @@ namespace CoreWeb.Models
         public decimal? Lat { get; set; }
         public string Aimname { get; set; }
         public string Countrycode { get; set; }
+        [JsonConverter(typeof(JsonDateConverter))]
+        public System.DateTime? Birthday { get; set; }
         public int? Pic { get; set; }
         public int Userid { get; set; }
         public int Namespaceid { get; set; }

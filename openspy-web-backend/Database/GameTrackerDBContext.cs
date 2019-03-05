@@ -269,6 +269,11 @@ namespace CoreWeb.Database
                     .HasColumnType("int(11)")
                     .HasDefaultValueSql("'0'");
 
+                entity.Property(e => e.Birthday)
+                    .HasColumnName("birthday")
+                    .HasColumnType("date")
+                    .HasMaxLength(31);
+
                 entity.Property(e => e.Nick)
                     .HasColumnName("nick")
                     .HasMaxLength(31);

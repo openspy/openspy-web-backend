@@ -14,7 +14,7 @@ namespace CoreWeb.Models
         public int? id;
         public String nick;
         public String uniquenick;
-        public String uniquenick_nick;
+        public String uniquenick_like;
         public UserLookup user;
         public int? namespaceid;
         public List<int> namespaceids;

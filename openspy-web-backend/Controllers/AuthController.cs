@@ -135,5 +135,14 @@ namespace CoreWeb.Controllers
 
             return response;
         }
+
+        [HttpPost("GetSession")]
+        public async Task<Session> GetSession([FromBody] AuthRequest request)
+        {
+            var lookup = new SessionLookup();
+            lookup.sessionKey = request.password;
+            var session = (await sessionRepository.Lookup(lookup)).FirstOrDefault();
+            return session;
+        }
     }
 }

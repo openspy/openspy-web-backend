@@ -67,6 +67,10 @@ namespace CoreWeb.Repository
             {
                 is_wide = false;
                 query = query.Where(b => b.Uniquenick == lookup.uniquenick);
+            } else if(lookup.uniquenick_nick != null)
+            {
+                is_wide = false;
+                query = query.Where(b => b.Uniquenick.Contains(lookup.uniquenick_nick));
             }
 
             if(is_wide)

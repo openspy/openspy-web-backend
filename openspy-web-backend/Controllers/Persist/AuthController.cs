@@ -9,6 +9,7 @@ using CoreWeb.Models;
 using CoreWeb.Exception;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CoreWeb.Controllers.Persist
 {

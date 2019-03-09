@@ -29,6 +29,7 @@ namespace CoreWeb.Controllers.Persist
         public Profile profile;
         public User user;
     };
+    [Authorize(Policy = "Persist")]
     [Route("v1/Persist/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase

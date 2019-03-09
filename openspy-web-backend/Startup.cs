@@ -132,7 +132,8 @@ options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
             services.AddScoped<ISnapShotDBContext, SnapShotDBContext>(c => new SnapShotDBContext(Configuration.GetConnectionString("snapshotDB")));
             services.AddScoped<IRepository<Snapshot, SnapshotLookup>, SnapShotRepository>();
-
+            services.AddScoped<IRepository<PlayerProgress, PlayerProgressLookup>, PlayerProgressRepository>();
+            services.AddScoped<IRepository<Leaderboard, LeaderboardLookup>, LeaderboardRepository>();
 
             services.AddSingleton<APIKeyProvider>(c => new APIKeyProvider(Configuration.GetValue<string>("APIKeyPrivateKey")));
             //weak RSA provider... 256 bit key length... due to GP max ticket length = 255 bytes...

@@ -86,8 +86,10 @@ namespace CoreWeb.Repository
 
                 progress.game = game;
                 progress.profile = profile;
-                progress.data = result.GetValue("data");
-                progress.modified = (decimal)result["modified"].AsDouble;
+                progress.data = Newtonsoft.Json.JsonConvert.DeserializeObject(result.GetValue("data").ToJson()); //stupid fix for weird bson deserialization
+
+                if(result.Contains("modified"))
+                    progress.modified = (decimal)result["modified"].AsDouble;
                 return_value.Add(progress);
             }
             return return_value;

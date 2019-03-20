@@ -27,9 +27,9 @@ namespace CoreWeb.Controllers.Persist
         }
 
         [HttpPost("LookupLeaderboard")]
-        public Task<IEnumerable<Leaderboard>> LookupLeaderboard([FromBody] LeaderboardLookup request)
+        public async Task<Leaderboard> LookupLeaderboard([FromBody] LeaderboardLookup request)
         {
-            return leaderboardRepository.Lookup(request);
+            return (await leaderboardRepository.Lookup(request)).FirstOrDefault();
         }
     }
 }

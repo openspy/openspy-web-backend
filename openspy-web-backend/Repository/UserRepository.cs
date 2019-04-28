@@ -40,6 +40,7 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.Partnercode == lookup.partnercode.Value);
             }
+            query = query.Where(b => b.Deleted == false);
             return await query.ToListAsync();
         }
         public Task<bool> Delete(UserLookup lookup)

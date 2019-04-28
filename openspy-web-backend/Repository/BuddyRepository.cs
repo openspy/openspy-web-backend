@@ -88,7 +88,7 @@ namespace CoreWeb.Repository
                 {
                     using (IModel channel = connection.CreateModel())
                     {
-                        String message = String.Format("\\type\\authorize_add\\to_profileid\\{0}\\from_profileid\\{1}", from_profile.Id, to_profile.Id);
+                        String message = String.Format("\\type\\authorize_add\\to_profileid\\{0}\\from_profileid\\{1}", to_profile.Id, from_profile.Id);
                         byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
                         IBasicProperties props = channel.CreateBasicProperties();

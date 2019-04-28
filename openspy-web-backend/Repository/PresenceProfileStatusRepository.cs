@@ -19,6 +19,7 @@ namespace CoreWeb.Repository
         private IRepository<Block, BuddyLookup> blockLookup;
         private String GP_EXCHANGE;
         private String GP_BUDDY_ROUTING_KEY;
+        private TimeSpan defaultTimeSpan;
         public PresenceProfileStatusRepository(PresenceStatusDatabase presenceStatusDatabase, IRepository<Profile, ProfileLookup> profileRepository, IMQConnectionFactory connectionFactory, IRepository<User, UserLookup> userRepository, IRepository<Buddy, BuddyLookup> buddyLookup, IRepository<Block, BuddyLookup> blockLookup)
         {
             GP_EXCHANGE = "presence.core";
@@ -29,6 +30,7 @@ namespace CoreWeb.Repository
             this.blockLookup = blockLookup;
             this.presenceStatusDatabase = presenceStatusDatabase;
             this.connectionFactory = connectionFactory;
+            this.defaultTimeSpan = TimeSpan.FromHours(2);
         }
         public async Task<IEnumerable<PresenceProfileStatus>> Lookup(PresenceProfileLookup lookup)
         {
@@ -120,6 +122,7 @@ namespace CoreWeb.Repository
             db.HashSet(redis_key, "status_string", model.statusText);
             db.HashSet(redis_key, "location_string", model.locationText);
             db.HashSet(redis_key, "quiet_flags", model.quietFlags.ToString());
+            db.KeyExpire(redis_key, this.defaultTimeSpan);
             await SendStatusUpdate(to_profile, model);
             return model;
         }

@@ -11,8 +11,9 @@ namespace CoreWeb.Exception
         {
             if(exception != null)
             {
-                extraData["message"] = exception.Message;
-                extraData["stackTrace"] = exception.StackTrace;
+                var sendException = exception.InnerException ?? exception;
+                extraData["message"] = sendException.Message;
+                extraData["stackTrace"] = sendException.StackTrace;
             }
         }
     }

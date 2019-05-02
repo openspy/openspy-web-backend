@@ -73,12 +73,12 @@ namespace CoreWeb.Repository
                         JValue subValue = (JValue)subItem;
                         if(subValue.Type == JTokenType.Integer)
                         {
+                            //this int long madness is required due to overflow issues
                             inItems.Add(new BsonInt32((int)(long)subValue.Value));
                         } else
                         {
                             inItems.Add(new BsonString(subValue.Value.ToString()));
                         }
-                        Console.WriteLine("subType", subValue);
                     }
                 }
                 else

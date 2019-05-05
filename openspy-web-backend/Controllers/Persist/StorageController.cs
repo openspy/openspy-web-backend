@@ -70,6 +70,7 @@ namespace CoreWeb.Controllers.Persist
             this.gameRepository = gameRepository;
             this.snapshotRepository = (SnapShotRepository)snapshotRepository;
         }
+        [Authorize(Policy = "PersistWrite")]
         [HttpPost("SetKVData")]
         public async Task<List<PersistKeyedData>> SetPersistKeyedData([FromBody] SetDataRequest request)
         {
@@ -137,7 +138,7 @@ namespace CoreWeb.Controllers.Persist
             lookup.keys = request.keys;
             return persistKeyedRepository.Lookup(lookup);
         }
-
+        [Authorize(Policy = "PersistWrite")]
         [HttpPost("SetData")]
         public async Task<PersistData> SetPersistData([FromBody] SetDataRequest request)
         {
@@ -196,7 +197,7 @@ namespace CoreWeb.Controllers.Persist
             return await persistRepository.Lookup(lookup);
             
         }
-
+        [Authorize(Policy = "PersistWrite")]
         [HttpPut("NewGame")]
         public async Task<Snapshot> DeclareNewGame([FromBody] NewGameRequest request)
         {
@@ -211,6 +212,7 @@ namespace CoreWeb.Controllers.Persist
             snapshot.ip = IP;
             return await snapshotRepository.Create(snapshot);
         }
+        [Authorize(Policy = "PersistWrite")]
         [HttpPut("AddGameSnapshot")]
         public async Task<UpdateStatus> AddGameSnapshot([FromBody] AddGameSnapshotRequest request)
         {

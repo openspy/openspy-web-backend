@@ -36,7 +36,7 @@ namespace CoreWeb
         {
             services.AddAuthorization(options =>
             {
-options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
+                options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
                 }));
@@ -46,7 +46,7 @@ options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
                 }));
                 options.AddPolicy("Persist", policy => policy.RequireAssertion(context =>
                 {
-                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Persist"));
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Persist") || (c.Type == "role" && c.Value == "ExternalReadOnly"));
                 }));
                 options.AddPolicy("CDKeyManage", policy => policy.RequireAssertion(context =>
                 {
@@ -83,6 +83,16 @@ options.AddPolicy("CoreService", policy => policy.RequireAssertion(context =>
                 options.AddPolicy("GeoAccess", policy => policy.RequireAssertion(context =>
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
+                }));
+                
+                //external roles - PersistRead (granted read only persist & profile access)
+                options.AddPolicy("PersistWrite", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Persist"));
+                }));
+                options.AddPolicy("ProfileRead", policy => policy.RequireAssertion(context =>
+                {
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Presence") || (c.Type == "role" && c.Value == "ExternalReadOnly"));
                 }));
             });
             services.AddAuthentication("ApiKeyAuth").AddScheme<ApiKeyAuthOpts, ApiKeyAuthHandler>("ApiKeyAuth", "ApiKeyAuth", opts => { });

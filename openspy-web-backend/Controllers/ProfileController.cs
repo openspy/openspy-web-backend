@@ -12,7 +12,7 @@ using CoreWeb.Exception;
 
 namespace CoreWeb.Controllers
 {
-    [Authorize(Policy = "ProfileManage")]
+    
     public class ProfileController : ModelController<Profile, ProfileLookup>
     {
         private IRepository<User, UserLookup> userRepository;
@@ -22,8 +22,18 @@ namespace CoreWeb.Controllers
             this.userRepository = userRepository;
             this.profileRepository = (ProfileRepository)repository;
         }
+
+        // POST api/<controller>
+        [HttpPost("lookup")]
+        [Authorize(Policy = "ProfileRead")]
+        public override async Task<IEnumerable<Profile>> Get([FromBody]ProfileLookup value)
+        {
+            return await base.Get(value);
+        }
+
         // POST api/<controller>
         [HttpPost]
+        [Authorize(Policy = "ProfileManage")]
         public override async Task<Profile> Update([FromBody]Profile value)
         {
             return await base.Update(value);
@@ -31,12 +41,14 @@ namespace CoreWeb.Controllers
 
         // PUT api/<controller>/5
         [HttpPut]
+        [Authorize(Policy = "ProfileManage")]
         public override async Task<Profile> Put([FromBody]Profile value)
         {
             return await base.Put(value);                
         }
 
         [HttpDelete]
+        [Authorize(Policy = "ProfileManage")]
         public override async Task<DeleteStatus> Delete([FromBody] ProfileLookup lookup)
         {
             var profiles = (await profileRepository.Lookup(lookup));

@@ -26,8 +26,9 @@ namespace CoreWeb.Controllers.Persist
             return playerProgressRepository.Lookup(request);
         }
 
+        [Authorize(Policy = "PersistWrite")]
         [HttpPost("SetPlayerProgress")]
-        public Task<bool> GetPlayerProgress([FromBody] PlayerProgressSet request)
+        public Task<bool> SetPlayerProgress([FromBody] PlayerProgressSet request)
         {
             return ((PlayerProgressRepository)playerProgressRepository).SetData(request);
         }

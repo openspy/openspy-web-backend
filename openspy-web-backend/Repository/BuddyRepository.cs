@@ -48,6 +48,10 @@ namespace CoreWeb.Repository
                     buddy.ToProfile = (await this.profileRepository.Lookup(plookup)).First();
                 }
             }
+            if(lookup.TargetProfile != null) {
+                var to_profile = (await this.profileRepository.Lookup(lookup.TargetProfile)).First();
+                return buddies.Where(b => b.ToProfileid == to_profile.Id);
+            }
             return buddies;
         }
         public Task<bool> Delete(BuddyLookup lookup)

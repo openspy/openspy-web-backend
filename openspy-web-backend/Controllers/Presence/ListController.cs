@@ -100,10 +100,10 @@ namespace CoreWeb.Controllers.Presence
             var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
             bool status_update = await buddyRepository.AuthorizeAdd(from_profile, to_profile);
 
-            if (status_update)
+            /*if (status_update)
             {
                 await presenceProfileStatusRepository.SendStatusUpdate(from_profile);
-            }
+            }*/
         }
 
         [HttpPost("LookupBuddy")]

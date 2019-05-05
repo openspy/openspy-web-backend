@@ -51,6 +51,9 @@ namespace CoreWeb.Repository
             {
                 BuddyLookup buddyLookup = new BuddyLookup();
                 buddyLookup.SourceProfile = lookup.profileLookup;
+                if(lookup.targetLookup != null)  {
+                    buddyLookup.TargetProfile = lookup.targetLookup;
+                }
                 var buddies = (await this.buddyLookup.Lookup(buddyLookup));
                 foreach (var buddy in buddies)
                 {

@@ -15,6 +15,7 @@ namespace CoreWeb.Controllers.Presence
     public class BuddyLookupRequest
     {
         public ProfileLookup profileLookup;
+        public ProfileLookup targetLookup;
         public bool? reverse;
     }
 
@@ -38,6 +39,9 @@ namespace CoreWeb.Controllers.Presence
             PresenceProfileLookup lookup = new PresenceProfileLookup();
             lookup.buddyLookup = true;
             lookup.profileLookup = buddyLookup.profileLookup;
+            if(buddyLookup.targetLookup != null) {
+                lookup.targetLookup = buddyLookup.targetLookup;
+            }
             return profileStatusRepository.Lookup(lookup);
         }
 

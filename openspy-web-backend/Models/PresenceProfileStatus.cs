@@ -8,7 +8,8 @@ namespace CoreWeb.Models
 {
     public class PresenceProfileLookup
     {
-        public ProfileLookup profileLookup;
+        public ProfileLookup profileLookup; //profile buddies belong to
+        public ProfileLookup targetLookup; //used for filtering down to a specific profile
         public bool? buddyLookup;
         public bool? blockLookup;
         public bool? reverseLookup;

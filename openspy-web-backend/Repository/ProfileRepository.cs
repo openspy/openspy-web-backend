@@ -247,15 +247,12 @@ namespace CoreWeb.Repository
                 throw new NoSuchUserException();
             }*/
             User user = value.User;
+            var userLookup = new UserLookup();
+            userLookup.id = value.Userid;
+            user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
             if (user == null)
             {
-                var userLookup = new UserLookup();
-                userLookup.id = value.Userid;
-                user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
-                if (user == null)
-                {
-                    throw new NoSuchUserException();
-                }
+                throw new NoSuchUserException();
             }
 
             var checkData = await CheckUniqueNickInUse(value.Uniquenick, value.Namespaceid, user.Partnercode);

@@ -26,6 +26,12 @@ namespace CoreWeb.Controllers.Persist
             return playerProgressRepository.Lookup(request);
         }
 
+        [HttpPost("SetPlayerProgress")]
+        public Task<bool> GetPlayerProgress([FromBody] PlayerProgressSet request)
+        {
+            return ((PlayerProgressRepository)playerProgressRepository).SetData(request);
+        }
+
         [HttpPost("LookupLeaderboard")]
         public async Task<Leaderboard> LookupLeaderboard([FromBody] LeaderboardLookup request)
         {

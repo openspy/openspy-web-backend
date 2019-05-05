@@ -20,4 +20,12 @@ namespace CoreWeb.Models
         public ProfileLookup profileLookup;
         public GameLookup gameLookup;
     }
+
+    public class PlayerProgressSet
+    {
+        public string pageKey;
+        public ProfileLookup profileLookup;
+        public GameLookup gameLookup;
+        public Dictionary<string, object> SetData;
+    }
 }

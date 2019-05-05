@@ -99,5 +99,34 @@ namespace CoreWeb.Repository
         {
             throw new NotImplementedException();
         }
+
+        public async Task<bool> SetData(PlayerProgressSet lookup)
+        {
+            var searchRequest = new BsonDocument
+            {
+            };
+
+            var profile = (await profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
+            var game = (await gameRepository.Lookup(lookup.gameLookup)).FirstOrDefault();
+            searchRequest["gameid"] = game.Id;
+            searchRequest["profileid"] = profile.Id;
+
+            if (lookup.pageKey != null)
+            {
+                searchRequest["pageKey"] = lookup.pageKey;
+            }
+
+            var updateData = new BsonDocument {
+
+            };
+            foreach(var item in lookup.SetData) {
+                updateData[item.Key.ToString()] = item.Value.ToString();
+            }
+            var updateRequest = new BsonDocument (
+                "$set", updateData
+            );
+            var result = (await collection.UpdateOneAsync(searchRequest, updateRequest));
+            return result.IsAcknowledged && result.IsModifiedCountAvailable && result.ModifiedCount > 0;
+        }
     }
 }

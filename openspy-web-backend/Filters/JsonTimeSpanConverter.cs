@@ -18,7 +18,7 @@ namespace CoreWeb.Filters
             if (reader.Value == null) { return null; }
             
             System.UInt32 v;
-            if (!System.UInt32.TryParse((string)existingValue, out v))
+            if (!System.UInt32.TryParse(reader.Value.ToString(), out v))
             {
                 return null;
             }

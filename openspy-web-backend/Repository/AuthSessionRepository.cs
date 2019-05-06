@@ -39,7 +39,8 @@ namespace CoreWeb.Repository
         {
             var db = sessionCache.GetDatabase();
             var result = db.HashGet(lookup.sessionKey.ToString(), "guid");
-            if (!result.HasValue) return null;
+            var ret = new List<Session>();
+            if (!result.HasValue) return ret;
             var session = new Session();
             session.sessionKey = result.ToString();
             var profileId = db.HashGet(lookup.sessionKey.ToString(), "profileid");
@@ -55,7 +56,7 @@ namespace CoreWeb.Repository
 
             session.appName = db.HashGet(lookup.sessionKey.ToString(), "appName");
 
-            var ret = new List<Session>();
+            
             ret.Add(session);
 
             return ret;

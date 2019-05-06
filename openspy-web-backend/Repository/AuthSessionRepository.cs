@@ -125,7 +125,8 @@ namespace CoreWeb.Repository
             {
                 StringBuilder sBuilder = new StringBuilder();
                 byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(session_key));
-                for (int i = 0; i < data.Length; i++)
+                var MAX_LENGTH = 12; //this is capped at 26 bytes, due to limitations of BF2142.
+                for (int i = 0; i < data.Length && i < MAX_LENGTH; i++)
                 {
                     sBuilder.Append(data[i].ToString("x2"));
                 }

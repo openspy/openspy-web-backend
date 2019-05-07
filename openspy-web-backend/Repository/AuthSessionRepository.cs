@@ -27,7 +27,7 @@ namespace CoreWeb.Repository
         private readonly string AUTHSESSION_ROUTING_KEY = "auth.events";
         public AuthSessionRepository(SessionCacheDatabase sessionCache, IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IMQConnectionFactory mqConnectionFactory, PresencePreAuthProvider rsaProvider)
         {
-            this.defaultTimeSpan = TimeSpan.FromHours(2);
+            this.defaultTimeSpan = TimeSpan.FromHours(6);
             this.userRepository = userRepository;
             this.profileRepository = profileRepository;
             this.gameRepository = gameRepository;

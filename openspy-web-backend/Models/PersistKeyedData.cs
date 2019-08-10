@@ -12,6 +12,7 @@ namespace CoreWeb.Models
         public List<string> keys;
         public int? persistType { get; set; }
         public int? dataIndex { get; set; }
+        public DateTime? modifiedSince { get; set; }
     };
     public partial class PersistKeyedData
     {

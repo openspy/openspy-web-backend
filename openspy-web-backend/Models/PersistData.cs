@@ -12,6 +12,8 @@ namespace CoreWeb.Models
         public ProfileLookup profileLookup;
         public int? PersistType { get; set; }
         public int? DataIndex { get; set; }
+
+        public DateTime? modifiedSince { get; set; }
 };
     public partial class PersistData
     {

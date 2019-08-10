@@ -18,7 +18,7 @@ namespace CoreWeb.Filters
             if (reader.Value == null) { return null; }
             System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             System.UInt32 v;
-            if (!System.UInt32.TryParse((string)reader.Value, out v))
+            if (!System.UInt32.TryParse(reader.Value.ToString(), out v))
             {
                 return null;
             }

@@ -50,6 +50,9 @@ namespace CoreWeb.Repository
             var query = gameTrackerDb.PersistData as IQueryable<PersistData>;
 
             query = query.Where(s => s.Profileid == profile.Id && s.Gameid == game.Id &&  s.DataIndex == lookup.DataIndex && s.PersistType == lookup.PersistType);
+            if(lookup.modifiedSince.HasValue) {
+                query = query.Where(s => s.Modified >= lookup.modifiedSince.Value);
+            }
             return await query.ToListAsync();
         }
 

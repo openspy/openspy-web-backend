@@ -80,21 +80,24 @@ namespace CoreWeb.Controllers
                     throw new UniqueNickInUseException(null);
                 }
             }
-            /*if (userModel != null)
+            if (userModel != null)
             {
                 if ((userId.HasValue && userId.Value != userModel.Id) || userModel.Password.CompareTo(register.password) != 0)
                 {
                     throw new UserExistsException(userModel); //user exist... need to throw profileid due to GP
                 }
-            }*/
+                response.user = userModel;
+            } else {
+                //if OK, create user, and profile
+                userModel = new User();
+                userModel.Email = register.user.Email;
+                userModel.Partnercode = register.user.Partnercode;
+                userModel.Password = register.password;
 
-            //if OK, create user, and profile
-            userModel = new User();
-            userModel.Email = register.user.Email;
-            userModel.Partnercode = register.user.Partnercode;
-            userModel.Password = register.password;
+                response.user = (await userRepository.Create(userModel));
+            }
 
-            response.user = (await userRepository.Create(userModel));
+
 
             if (register.profile != null)
             {

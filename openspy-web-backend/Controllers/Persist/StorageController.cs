@@ -136,6 +136,7 @@ namespace CoreWeb.Controllers.Persist
             lookup.persistType = request.persistType;
             lookup.dataIndex = request.dataIndex;
             lookup.keys = request.keys;
+            lookup.modifiedSince = request.modifiedSince;
             return persistKeyedRepository.Lookup(lookup);
         }
         [Authorize(Policy = "PersistWrite")]
@@ -194,6 +195,7 @@ namespace CoreWeb.Controllers.Persist
             lookup.gameLookup = request.gameLookup;
             lookup.DataIndex = request.dataIndex;
             lookup.PersistType = request.persistType;
+            lookup.modifiedSince = request.modifiedSince;
             return await persistRepository.Lookup(lookup);
             
         }
@@ -205,10 +207,15 @@ namespace CoreWeb.Controllers.Persist
             var snapshot = new Snapshot();
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
             if (game == null) throw new ArgumentException();
-            var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
-            if (profile == null) throw new NoSuchUserException();
-            snapshot.gameid = game.Id;
-            snapshot.profileid = profile.Id;
+            if(request.profileLookup != null) {
+
+                var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+                if (profile != null) {
+                    snapshot.profileid = profile.Id;
+                }                
+            }
+
+            snapshot.gameid = game.Id;            
             snapshot.ip = IP;
             return await snapshotRepository.Create(snapshot);
         }
@@ -219,12 +226,16 @@ namespace CoreWeb.Controllers.Persist
             UpdateStatus status = new UpdateStatus();
             var game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
             if (game == null) throw new ArgumentException();
-            var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
-            if (profile == null) throw new NoSuchUserException();
 
             var update = new SnapshotUpdate();
-            update.data = request.keyValueList;
-            update.profileid = profile.Id;
+            if(request.profileLookup != null) {
+                var profile = (await profileRepository.Lookup(request.profileLookup)).FirstOrDefault();
+                if (profile != null) {
+                    update.profileid = profile.Id;
+                }   
+            }
+            
+            update.data = request.keyValueList;            
             update.gameid = game.Id;
             update.completed = request.complete.HasValue && request.complete.Value;
             

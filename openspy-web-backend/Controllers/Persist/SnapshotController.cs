@@ -15,10 +15,12 @@ namespace CoreWeb.Controllers.Persist
     {
         private IRepository<PlayerProgress, PlayerProgressLookup> playerProgressRepository;
         private IRepository<Leaderboard, LeaderboardLookup> leaderboardRepository;
-        public SnapshotController(IRepository<PlayerProgress, PlayerProgressLookup> playerProgressRepository, IRepository<Leaderboard, LeaderboardLookup> leaderboardRepository)
+        private IRepository<Snapshot, SnapshotLookup> snapshotRepository;
+        public SnapshotController(IRepository<PlayerProgress, PlayerProgressLookup> playerProgressRepository, IRepository<Leaderboard, LeaderboardLookup> leaderboardRepository, IRepository<Snapshot, SnapshotLookup> snapshotRepository)
         {
             this.leaderboardRepository = leaderboardRepository;
             this.playerProgressRepository = playerProgressRepository;
+            this.snapshotRepository = snapshotRepository;
         }
         [HttpPost("LookupPlayerProgress")]
         public Task<IEnumerable<PlayerProgress>> GetPlayerProgress([FromBody] PlayerProgressLookup request)
@@ -37,6 +39,16 @@ namespace CoreWeb.Controllers.Persist
         public async Task<Leaderboard> LookupLeaderboard([FromBody] LeaderboardLookup request)
         {
             return (await leaderboardRepository.Lookup(request)).FirstOrDefault();
+        }
+        [HttpPost("LookupSnapshot")]
+        public async Task<IEnumerable<Snapshot>> LookupSnapshot([FromBody] SnapshotLookup request)
+        {
+            return await (snapshotRepository.Lookup(request));
+        }
+        [HttpPost("RequeueSnapshots")]
+        public async Task RequeueSnapshots([FromBody] SnapshotLookup request)
+        {
+            await ((SnapShotRepository)snapshotRepository).RequeueSnapshots(request);
         }
     }
 }

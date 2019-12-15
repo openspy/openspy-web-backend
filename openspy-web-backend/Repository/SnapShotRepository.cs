@@ -185,6 +185,7 @@ namespace CoreWeb.Repository
 
                         IBasicProperties props = channel.CreateBasicProperties();
                         props.ContentType = "application/json";
+                        props.Headers = new Dictionary<string, object>();
                         props.Headers["X-OpenSpy-GameId"] = snapshotUpdate.gameid;
                         channel.BasicPublish(GSTATS_EXCHANGE, GSTATS_ROUTING_KEY, props, messageBodyBytes);
                         return true;

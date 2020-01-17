@@ -117,6 +117,7 @@ namespace CoreWeb
             services.AddDbContext<GameTrackerDBContext>();
             services.AddDbContext<GamemasterDBContext>();
             services.AddDbContext<KeymasterDBContext>();
+            services.AddDbContext<PeerchatDBContext>();
 
 
             var multiplexer = ConnectionMultiplexer.Connect(Configuration.GetConnectionString("redisCache"));
@@ -138,6 +139,7 @@ namespace CoreWeb
             services.AddScoped<IRepository<PersistKeyedData, PersistKeyedDataLookup>, PersistKeyedDataRepository>();
             services.AddScoped<IRepository<PersistData, PersistDataLookup>, PersistDataRepository>();
             services.AddScoped<IRepository<CdKey, CdKeyLookup>, CdKeyRepository>();
+            services.AddScoped<IRepository<UsermodeRecord, UsermodeLookup>, UsermodeRepository>();
 
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
             services.AddScoped<ISnapShotDBContext, SnapShotDBContext>(c => new SnapShotDBContext(Configuration.GetConnectionString("snapshotDB")));

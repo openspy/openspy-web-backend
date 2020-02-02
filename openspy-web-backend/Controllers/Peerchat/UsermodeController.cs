@@ -14,10 +14,10 @@ namespace CoreWeb.Controllers.Peerchat
     [Authorize(Policy = "Persist")]
     public class UsermodeController : ModelController<UsermodeRecord, UsermodeLookup>
     {
-        private IRepository<UsermodeRecord, UsermodeLookup> uermodeRepository;
+        private UsermodeRepository usermodeRepository;
         public UsermodeController(IRepository<UsermodeRecord, UsermodeLookup> uermodeRepository) : base(uermodeRepository)
         {
-            this.uermodeRepository = uermodeRepository;
+            this.usermodeRepository = (UsermodeRepository)uermodeRepository;
         }
         [HttpPost("lookup")]
         [Authorize(Policy = "CoreService")]
@@ -31,5 +31,26 @@ namespace CoreWeb.Controllers.Peerchat
 
         [HttpDelete]
         public override Task<DeleteStatus> Delete([FromBody]UsermodeLookup value) => base.Delete(value);
+
+        [HttpPost("GetEffectiveUsermode")]
+        [Authorize(Policy = "CoreService")]
+        public async Task<UsermodeRecord> GetEffectiveUsermode([FromBody] PeerchatChannelUserSummary channelUserSummary)
+        {
+            return await usermodeRepository.GetEffectiveUsermode(channelUserSummary);
+        }
+
+        [HttpPost("ReapplyEffectiveUsermode")]
+        [Authorize(Policy = "CoreService")]
+        public async Task ReapplyEffectiveUsermode([FromBody] PeerchatChannelUserSummary channelUserSummary)
+        {
+            await usermodeRepository.ApplyUsermode(channelUserSummary, null);
+        }
+
+        [HttpPost("ResyncChannelUsermodes")]
+        [Authorize(Policy = "CoreService")]
+        public async Task ResyncChannelUsermodes([FromBody] string channelName)
+        {
+            await usermodeRepository.ResyncChannelUsermodes(channelName);
+        }
     }
 }

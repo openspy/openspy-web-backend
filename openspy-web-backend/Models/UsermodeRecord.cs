@@ -11,6 +11,7 @@ namespace CoreWeb.Models
         public int? Id {get; set;}
         public string channelmask {get; set;}
         public string hostmask {get; set;}
+        public string machineid { get; set; }
         public int? profileid {get; set;}
     };
     public class UsermodeRecord

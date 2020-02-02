@@ -127,6 +127,7 @@ namespace CoreWeb
             services.AddScoped<SessionCacheDatabase, SessionCacheDatabase>(c => new SessionCacheDatabase(multiplexer));
             services.AddScoped<GameCacheDatabase, GameCacheDatabase>(c => new GameCacheDatabase(multiplexer));
             services.AddScoped<GroupCacheDatabase, GroupCacheDatabase>(c => new GroupCacheDatabase(multiplexer));
+            services.AddScoped<PeerchatCacheDatabase, PeerchatCacheDatabase>(c => new PeerchatCacheDatabase(multiplexer));
 
             services.AddScoped<IRepository<User, UserLookup>, UserRepository>();
             services.AddScoped<IRepository<Profile, ProfileLookup>, ProfileRepository>();

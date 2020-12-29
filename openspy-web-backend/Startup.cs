@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 using CoreWeb.Database;
 using CoreWeb.Models;
+using CoreWeb.Models.EA;
 using CoreWeb.Repository;
 using System.Security.Principal;
 using CoreWeb.Authentication;
@@ -51,6 +52,12 @@ namespace CoreWeb
                 options.AddPolicy("CDKeyManage", policy => policy.RequireAssertion(context =>
                 {
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
+                }));
+
+                options.AddPolicy("FESL", policy => policy.RequireAssertion(context =>
+                {
+                    return true;
+                    //return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
                 }));
                 
                 options.AddPolicy("GameManage", policy => policy.RequireClaim("role", "Admin"));
@@ -141,6 +148,9 @@ namespace CoreWeb
             services.AddScoped<IRepository<PersistData, PersistDataLookup>, PersistDataRepository>();
             services.AddScoped<IRepository<CdKey, CdKeyLookup>, CdKeyRepository>();
             services.AddScoped<IRepository<UsermodeRecord, UsermodeLookup>, UsermodeRepository>();
+            services.AddScoped<IRepository<EntitledGameFeature, UserLookup>, GameFeatureRepository>();
+            services.AddScoped<IRepository<ObjectInventoryItem, ObjectInventoryLookup>, ObjectInventoryRepository>();
+            //ObjectInventoryRepository : IRepository<ObjectInventoryItem, ObjectInventoryLookup>
 
             services.AddScoped<IMQConnectionFactory, rmqConnectionFactory>(); //this means whenever its required, a connection will be made...
             services.AddScoped<ISnapShotDBContext, SnapShotDBContext>(c => new SnapShotDBContext(Configuration.GetConnectionString("snapshotDB")));

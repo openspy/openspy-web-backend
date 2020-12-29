@@ -9,29 +9,30 @@ using CoreWeb.Models.EA;
 
 namespace CoreWeb.Repository
 {
-    public class GameFeatureRepository : IRepository<EntitledGameFeature, UserLookup>
+    public class GameFeatureRepository : IRepository<EntitledGameFeature, EntitledGameFeatureLookup>
     {
-        public GameFeatureRepository()
+        private IRepository<Game, GameLookup> gameRepository;
+        public GameFeatureRepository(IRepository<Game, GameLookup> gameRepository)
         {
+            this.gameRepository = gameRepository;
         }
-        public Task<IEnumerable<EntitledGameFeature>> Lookup(UserLookup lookup)
+        public async Task<IEnumerable<EntitledGameFeature>> Lookup(EntitledGameFeatureLookup lookup)
         {
+            var game = (await gameRepository.Lookup(lookup.gameLookup)).FirstOrDefault();
             var result = new List<EntitledGameFeature>();
-            var entry = new EntitledGameFeature {
-                EntitlementExpirationDays = -1,
-                GameFeatureId = 2590,
-                Status = 0,
-                EntitlementExpirationDate = null,
-                Message = null
-
-            };
-            result.Add(entry);
-
-            return Task.Run(() => {
-                return (IEnumerable<EntitledGameFeature>)result;
-            });
+            if(game != null && game.Id == 1324) { //stella/bf2142
+                var entry = new EntitledGameFeature {
+                    EntitlementExpirationDays = -1,
+                    GameFeatureId = 2590,
+                    Status = 0,
+                    EntitlementExpirationDate = null,
+                    Message = null
+                };
+                result.Add(entry);
+            }
+            return (IEnumerable<EntitledGameFeature>)result;
         }
-        public Task<bool> Delete(UserLookup lookup)
+        public Task<bool> Delete(EntitledGameFeatureLookup lookup)
         {
             throw new NotImplementedException();
         }

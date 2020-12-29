@@ -11,35 +11,38 @@ namespace CoreWeb.Repository
 {
     public class ObjectInventoryRepository : IRepository<ObjectInventoryItem, ObjectInventoryLookup>
     {
-        public ObjectInventoryRepository()
+        private IRepository<Game, GameLookup> gameRepository;
+        public ObjectInventoryRepository(IRepository<Game, GameLookup> gameRepository)
         {
+            this.gameRepository = gameRepository;
         }
-        public Task<IEnumerable<ObjectInventoryItem>> Lookup(ObjectInventoryLookup lookup)
+        public async Task<IEnumerable<ObjectInventoryItem>> Lookup(ObjectInventoryLookup lookup)
         {
             var result = new List<ObjectInventoryItem>();
-            if(lookup.DomainId.CompareTo("eagames") == 0 && lookup.SubdomainId.CompareTo("bf2142") == 0 && lookup.PartitionKey.CompareTo("online_content") == 0 && lookup.ObjectIds.Contains("bf2142_bp1")) {
-                var entry = new ObjectInventoryItem {
-                    ObjectId = "bf2142_bp1",
-                    EditionNo = 0,
-                    DateEntitled = DateTime.Now.AddDays(-7),
-                    EntitleId = 114793868,
-                    UseCount = 0
-                };
-                result.Add(entry);
+            var game = (await gameRepository.Lookup(lookup.gameLookup)).FirstOrDefault();
+            if(game != null && game.Id == 1324) { //stella/bf2142
+                if(lookup.DomainId.CompareTo("eagames") == 0 && lookup.SubdomainId.CompareTo("bf2142") == 0 && lookup.PartitionKey.CompareTo("online_content") == 0 && lookup.ObjectIds.Contains("bf2142_bp1")) {
+                    var entry = new ObjectInventoryItem {
+                        ObjectId = "bf2142_bp1",
+                        EditionNo = 0,
+                        DateEntitled = DateTime.Now.AddDays(-7),
+                        EntitleId = 114793868,
+                        UseCount = 0
+                    };
+                    result.Add(entry);
 
-                entry = new ObjectInventoryItem {
-                    ObjectId = "bf2142_bp1",
-                    EditionNo = 0,
-                    DateEntitled = DateTime.Now.AddDays(-7),
-                    EntitleId = 245445381,
-                    UseCount = 0
-                };
-                result.Add(entry);
+                    entry = new ObjectInventoryItem {
+                        ObjectId = "bf2142_bp1",
+                        EditionNo = 0,
+                        DateEntitled = DateTime.Now.AddDays(-7),
+                        EntitleId = 245445381,
+                        UseCount = 0
+                    };
+                    result.Add(entry);
+                }
             }
 
-            return Task.Run(() => {
-                return (IEnumerable<ObjectInventoryItem>)result;
-            });
+            return (IEnumerable<ObjectInventoryItem>)result;
         }
         public Task<bool> Delete(ObjectInventoryLookup lookup)
         {

@@ -9,6 +9,9 @@ namespace CoreWeb.Models.EA
         public string SubdomainId {get; set;}
         public string PartitionKey {get; set;}
         public IEnumerable<string> ObjectIds { get; set; }
+
+        public GameLookup gameLookup {get; set;}
+        public UserLookup userLookup {get; set;}
     }
     public class ObjectInventoryItem
     {

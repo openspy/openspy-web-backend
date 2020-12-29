@@ -56,8 +56,7 @@ namespace CoreWeb
 
                 options.AddPolicy("FESL", policy => policy.RequireAssertion(context =>
                 {
-                    return true;
-                    //return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
+                    return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "CoreService"));
                 }));
                 
                 options.AddPolicy("GameManage", policy => policy.RequireClaim("role", "Admin"));

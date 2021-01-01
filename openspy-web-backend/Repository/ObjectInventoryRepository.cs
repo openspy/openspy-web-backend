@@ -18,6 +18,8 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<ObjectInventoryItem>> Lookup(ObjectInventoryLookup lookup)
         {
+            var defaultDate = new DateTime(2008, 5, 1, 8, 30, 52);
+
             var result = new List<ObjectInventoryItem>();
             var game = (await gameRepository.Lookup(lookup.gameLookup)).FirstOrDefault();
             if(game != null && game.Id == 1324) { //stella/bf2142
@@ -25,7 +27,7 @@ namespace CoreWeb.Repository
                     var entry = new ObjectInventoryItem {
                         ObjectId = "bf2142_bp1",
                         EditionNo = 0,
-                        DateEntitled = DateTime.Now.AddDays(-7),
+                        DateEntitled = defaultDate,
                         EntitleId = 114793868,
                         UseCount = 0
                     };
@@ -34,7 +36,7 @@ namespace CoreWeb.Repository
                     entry = new ObjectInventoryItem {
                         ObjectId = "bf2142_bp1",
                         EditionNo = 0,
-                        DateEntitled = DateTime.Now.AddDays(-7),
+                        DateEntitled = defaultDate,
                         EntitleId = 245445381,
                         UseCount = 0
                     };

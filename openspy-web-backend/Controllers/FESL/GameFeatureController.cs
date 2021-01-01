@@ -13,15 +13,15 @@ namespace CoreWeb.Controllers.FESL
 {
     [Route("v1/FESL/[controller]")]
     [Authorize(Policy = "FESL")]
-    public class GameFeatureController : ModelController<EntitledGameFeature, UserLookup>
+    public class GameFeatureController : ModelController<EntitledGameFeature, EntitledGameFeatureLookup>
     {
         private GameFeatureRepository gameFeatureRepository;
-        public GameFeatureController(IRepository<EntitledGameFeature, UserLookup> gameFeatureRepository) : base(gameFeatureRepository)
+        public GameFeatureController(IRepository<EntitledGameFeature, EntitledGameFeatureLookup> gameFeatureRepository) : base(gameFeatureRepository)
         {
             this.gameFeatureRepository = (GameFeatureRepository)gameFeatureRepository;
         }
         [HttpPost("lookup")]
-        public override Task<IEnumerable<EntitledGameFeature>> Get([FromBody] UserLookup lookup) => base.Get(lookup);
+        public override Task<IEnumerable<EntitledGameFeature>> Get([FromBody] EntitledGameFeatureLookup lookup) => base.Get(lookup);
 
         [HttpPost]
         public override Task<EntitledGameFeature> Update([FromBody]EntitledGameFeature value) => base.Update(value);
@@ -30,6 +30,6 @@ namespace CoreWeb.Controllers.FESL
         public override Task<EntitledGameFeature> Put([FromBody]EntitledGameFeature value) => base.Put(value);
 
         [HttpDelete]
-        public override Task<DeleteStatus> Delete([FromBody]UserLookup value) => base.Delete(value);
+        public override Task<DeleteStatus> Delete([FromBody]EntitledGameFeatureLookup value) => base.Delete(value);
     }
 }

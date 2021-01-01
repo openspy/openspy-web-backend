@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-
+using CoreWeb.Filters;
 namespace CoreWeb.Models.EA
 {
     public class ObjectInventoryLookup {
@@ -17,6 +17,7 @@ namespace CoreWeb.Models.EA
     {
         public string ObjectId { get; set; }
         public int EditionNo { get; set; }
+        [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime DateEntitled { get; set; }
         public int UseCount { get; set; }
         public int EntitleId { get; set; }

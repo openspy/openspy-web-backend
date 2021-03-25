@@ -26,6 +26,7 @@ services:
         MYSQL_USER: 'root'
         MYSQL_PASSWORD: 'password'
         MYSQL_HOST: '172.18.0.1'
+        HTTP_API_URL: '172.18.0.1:8080'
         RABBITMQ_DEFAULT_USER: "rabbitmq"
         RABBITMQ_DEFAULT_PASS: "rabbitmq"
         RABBITMQ_DEFAULT_VHOST: "/"
@@ -69,7 +70,7 @@ services:
     image: "os-core-web"
     hostname: "core-web"
     ports:
-      - "80:8080"
+      - "8080:8080"
     environment:
       CONNECTIONSTRINGS__REDISCACHE: "172.18.0.1,allowAdmin=true"
       CONNECTIONSTRINGS__GAMEMASTERDB: "server=172.18.0.1;database=Gamemaster;user=root;password=password"

@@ -6,6 +6,8 @@ This project should be rearchitected at some point as its roles and responsibili
 
 A [docker-compose](/docker-compose.yaml) script and [Dockerfile](/Dockerfile) have been provided for reference on how to run it.
 
+## Plain text passwords
+Due to some unfortunate choices by GameSpy, a "client challenge" is used in combination with a server challenge in the GP protocol. The server responds with an expected result, which is calculated using the md5 hash of the plaintext password. At best an unsalted MD5 hash can be used, however at this point in time it is kept plain text due to this reason, and to avoid potential issues with future services which are integrated. A solution being considered is to instead assign the user a password, however its unclear how to get this information to the user, as most games do not expect anything like email verification before being able to use their account. Another idea is "per game" passwords, but in the end they would be plain text (or unsalted MD5) anyways.
 
 ## Generating an API Key
 

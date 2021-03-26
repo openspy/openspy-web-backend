@@ -11,6 +11,7 @@ create table profile_cdkeys (
 	profileid int not null
 );
 create table cdkey_rules (
+	id int auto_increment PRIMARY KEY,
 	gameid int not null,
 	fail_if_not_found tinyint(1) not null
 );

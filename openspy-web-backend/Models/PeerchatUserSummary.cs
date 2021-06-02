@@ -16,6 +16,9 @@ namespace CoreWeb.Models
 		public string Address { get; set; }
 		public int Gameid{ get; set; }
 		public int Profileid{ get; set; }
+		public override string ToString() {
+			return Nick + "!" + Username + "@" + Hostname;
+		}
 	}
 	public class PeerchatChannelUserSummary
 	{

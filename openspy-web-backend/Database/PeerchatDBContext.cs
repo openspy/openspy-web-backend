@@ -60,7 +60,7 @@ namespace CoreWeb.Database
                     .HasColumnName("expiresAt")
                     .HasColumnType("datetime");
 
-                entity.Property(e => e.ircNick)
+                entity.Property(e => e.setByNick)
                     .HasColumnName("ircNick")
                     .HasColumnType("text");
 
@@ -77,6 +77,7 @@ namespace CoreWeb.Database
                     .HasColumnType("datetime");
 
                 entity.Ignore(e => e.expiresIn);
+                entity.Ignore(e => e.isGlobal);
             });
             base.OnModelCreating(modelBuilder);
         }

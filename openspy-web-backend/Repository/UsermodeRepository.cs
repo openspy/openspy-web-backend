@@ -7,7 +7,6 @@ using CoreWeb.Database;
 using CoreWeb.Models;
 using StackExchange.Redis;
 using RabbitMQ.Client;
-
 namespace CoreWeb.Repository
 {
     enum EUserChannelFlag
@@ -32,23 +31,116 @@ namespace CoreWeb.Repository
         private IMQConnectionFactory connectionFactory;
         private String PEERCHAT_EXCHANGE;
         private String PEERCAHT_CLIENT_MESSAGE_KEY;
+        private String PEERCHAT_KEYUPDATE_KEY;
         public UsermodeRepository(PeerchatDBContext peerChatDb, PeerchatCacheDatabase peerChatCacheDb, IMQConnectionFactory connectionFactory)
         {
             PEERCHAT_EXCHANGE = "openspy.core";
             PEERCAHT_CLIENT_MESSAGE_KEY = "peerchat.client-messages";
+            PEERCHAT_KEYUPDATE_KEY = "peerchat.keyupdate-messages";
             this.peerChatDb = peerChatDb;
             this.peerChatCacheDb = peerChatCacheDb;
             this.connectionFactory = connectionFactory;
         }
+        private UsermodeRecord LookupTemporaryUsermode(int usermodeId) {
+            UsermodeRecord result = new UsermodeRecord();
+            var key = "USERMODE_" + usermodeId;
+            var db = peerChatCacheDb.GetDatabase();
+            if(!db.KeyExists(key))
+                return null;
+            result.Id = usermodeId;
+            result.channelmask = db.HashGet(key, "chanmask");
+            result.hostmask = db.HashGet(key, "hostmask");
+            result.comment = db.HashGet(key, "comment");
+            result.machineid = db.HashGet(key, "machineid");
+            if(int.TryParse(db.HashGet(key, "modeflags"), out int modeflags)) {
+                result.modeflags = modeflags;
+            } else {
+                result.modeflags = 0;
+            }
+            
+            result.isGlobal = usermodeId > 0;
+            result.setByNick = db.HashGet(key, "setByNick");
+            result.setByHost = db.HashGet(key, "setByHost");
+
+            if(int.TryParse(db.HashGet(key, "setByPid"), out int setByPid)) {
+                result.setByPid = setByPid;
+            }
+            
+
+            if(int.TryParse(db.HashGet(key, "profileid"), out int profileid)) {
+                if(profileid == 0) 
+                    result.profileid = null;
+                else 
+                    result.profileid = profileid;
+            }
+            
+            var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            result.setAt = Epoch.AddSeconds(int.Parse(db.HashGet(key, "setAt")));
+
+            result.expiresAt = Epoch.AddSeconds(int.Parse(db.HashGet(key, "expiresAt")));
+            
+            return result;
+        }
+        private IEnumerable<UsermodeRecord> LookupCachedUsermodes(UsermodeLookup lookup) {
+            var result = new List<UsermodeRecord>();
+            var db = peerChatCacheDb.GetDatabase();
+            IScanningCursor cursor = null;
+            IEnumerable<SortedSetEntry> entries;
+            do
+            {
+                entries = db.SortedSetScan("usermodes", cursor: cursor?.Cursor ?? 0);
+                foreach (var entry in entries)
+                {
+                    int id = int.Parse(entry.Element.ToString());
+                    var usermode = LookupTemporaryUsermode(id);
+                    if(usermode != null && TestUsermodeMatches(lookup, usermode)) {
+                        result.Add(usermode);
+                    }
+                }
+
+                cursor = (IScanningCursor)entries;
+            } while ((cursor?.Cursor ?? 0) != 0);
+            return result;
+        }
+ 
+        private bool TestUsermodeMatches(UsermodeLookup lookup, UsermodeRecord usermode) {
+            if(usermode.profileid.HasValue && lookup.profileid.HasValue) {
+                if(usermode.profileid != lookup.profileid)
+                    return false;
+            }
+            if(!string.IsNullOrEmpty(usermode.hostmask) && !string.IsNullOrEmpty(lookup.hostmask)) {
+                return FastWildcard.FastWildcard.IsMatch(lookup.hostmask, usermode.hostmask);
+            }
+            if(!string.IsNullOrEmpty(usermode.machineid)) {
+                return lookup.machineid.CompareTo(usermode.machineid) == 0;
+            }
+            return true;
+        }
         public async Task<IEnumerable<UsermodeRecord>> Lookup(UsermodeLookup lookup)
         {
+            IEnumerable<UsermodeRecord> result;
+            if((lookup.Id.HasValue && lookup.Id < 0)) {
+                result = new List<UsermodeRecord>();
+                var item = LookupTemporaryUsermode(lookup.Id.Value);
+                if(item == null)
+                    return result;
+                result = result.Append(item);
+                return result;
+            } else if ((lookup.channelmask != null && lookup.channelmask.Contains("*") == false)) {
+                //lookup cache
+                result = LookupCachedUsermodes(lookup);
+                if(result.Count() > 0)
+                    return result;
+            }
+
+            
             var query = peerChatDb.Usermode as IQueryable<UsermodeRecord>;
             if (lookup.Id.HasValue)
             {
                 query = peerChatDb.Usermode.Where(b => b.Id == lookup.Id.Value);
             }
             
-            if (lookup.channelmask != null && lookup.channelmask.CompareTo("*") == 0) { //chan mask set... and global wildcard
+            if (lookup.channelmask != null && lookup.channelmask.CompareTo("*") != 0) { //chan mask set... and global wildcard
                 if(lookup.channelmask.Contains("*")) //wildcard search
                 {
                     var mask = lookup.channelmask.Replace("*", "%");
@@ -88,14 +180,24 @@ namespace CoreWeb.Repository
                 var usermodes = (await Lookup(lookup)).ToList();
                 foreach (var usermode in usermodes)
                 {
-                    peerChatDb.Remove<UsermodeRecord>(usermode);
-                    total_modified += await peerChatDb.SaveChangesAsync();
+                    if(usermode.Id < 0) {
+                        total_modified++;
+                        DeleteTemporaryUsermode(usermode.Id);
+                    } else {
+                        peerChatDb.Remove<UsermodeRecord>(usermode);
+                        total_modified += await peerChatDb.SaveChangesAsync();
+                    }
+                    
                     await ResyncChannelUsermodes(usermode.channelmask);
                 }
 
                 SendBansUpdate(usermodes, false);
                 return usermodes.Count > 0 && total_modified > 0;
             });
+        }
+        private void DeleteTemporaryUsermode(int id) {
+            var db = peerChatCacheDb.GetDatabase();
+            db.KeyDelete("USERMODE_" + id.ToString());
         }
         private void SendBansUpdate(IEnumerable<UsermodeRecord> usermodes, bool add)
         {
@@ -118,18 +220,28 @@ namespace CoreWeb.Repository
                                 using (IModel channel = connection.CreateModel())
                                 {
                                     var modeString = (add ? "+" : "-") + "b *@" + usermode.hostmask;
-                                    var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(modeString);
-                                    String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", entry.Value, Convert.ToBase64String(modeStringBytes));
-                                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
-
-                                    IBasicProperties props = channel.CreateBasicProperties();
-                                    props.ContentType = "text/plain";
-                                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                                    SendModeString(entry.Value, modeString);
                                 }
                             }
                         }
                         cursor = (IScanningCursor)entries;
                     } while ((cursor?.Cursor ?? 0) != 0);
+                }
+            }
+        }
+        private void SendModeString(String toChannel, String modeString) {
+            ConnectionFactory factory = connectionFactory.Get();
+            using (IConnection connection = factory.CreateConnection())
+            {
+                using (IModel channel = connection.CreateModel())
+                {
+                    var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(modeString);
+                    String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", toChannel, Convert.ToBase64String(modeStringBytes));
+                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
+
+                    IBasicProperties props = channel.CreateBasicProperties();
+                    props.ContentType = "text/plain";
+                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
                 }
             }
         }
@@ -141,12 +253,53 @@ namespace CoreWeb.Repository
         }
         public async Task<UsermodeRecord> Create(UsermodeRecord model)
         {
-            model.setAt = DateTime.UtcNow;
-            var entry = await peerChatDb.AddAsync<UsermodeRecord>(model);
-            var num_modified = await peerChatDb.SaveChangesAsync();
-            await ApplyUserrecords(entry.Entity);
-            SendBansUpdate(new List<UsermodeRecord> { entry.Entity }, false);
-            return entry.Entity;
+            if(model.isGlobal == true) {
+                model.setAt = DateTime.UtcNow;
+                var entry = await peerChatDb.AddAsync<UsermodeRecord>(model);
+                var num_modified = await peerChatDb.SaveChangesAsync();
+                await ApplyUserrecords(entry.Entity);
+                SendBansUpdate(new List<UsermodeRecord> { entry.Entity }, false);
+                await ResyncChannelUsermodes(model.channelmask);
+                
+                return entry.Entity;
+            } else {
+                if(model.channelmask.Contains("*")) return null;
+                model.Id = WriteTemporaryUsermode(model);
+                SendBansUpdate(new List<UsermodeRecord> { model }, true);
+                await ResyncChannelUsermodes(model.channelmask);
+                return model;
+            }            
+        }
+        private int WriteTemporaryUsermode(UsermodeRecord model) {
+            var db = peerChatCacheDb.GetDatabase();
+            var id = -(db.StringIncrement("USERMODEID"));
+
+            var redis_Key = "USERMODE_" + id;
+
+            db.HashSet(redis_Key, "id", id);
+            db.HashSet(redis_Key, "chanmask", model.channelmask);
+            db.HashSet(redis_Key, "hostmask", model.hostmask);
+            db.HashSet(redis_Key, "comment", model.comment);
+            db.HashSet(redis_Key, "machineid", model.machineid);
+            db.HashSet(redis_Key, "modeflags", model.modeflags);
+            db.HashSet(redis_Key, "isGlobal", model.isGlobal ? 1 : 0);
+            db.HashSet(redis_Key, "setByNick", model.setByNick);
+            db.HashSet(redis_Key, "setByHost", model.setByHost);
+            db.HashSet(redis_Key, "setByPid", model.setByPid);
+
+            var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            TimeSpan elapsedTime = (DateTime)model.setAt - Epoch;
+            db.HashSet(redis_Key, "setAt", (int)elapsedTime.TotalSeconds);
+
+            if(model.expiresAt != null) {
+                elapsedTime = (DateTime)model.expiresAt - Epoch;
+                db.HashSet(redis_Key, "expiresAt", (int)elapsedTime.TotalSeconds);   
+            } else {
+                db.HashSet(redis_Key, "expiresAt", 0);
+            }
+
+            db.SortedSetIncrement("usermodes", id, 1);
+            return (int)id;
         }
         private async Task ApplyUserrecords(UsermodeRecord model)
         {
@@ -235,6 +388,7 @@ namespace CoreWeb.Repository
         }
         public async Task ApplyUsermode(PeerchatChannelUserSummary channelUserSummary, UsermodeRecord usermode)
         {
+            bool kickUser = false;
             if(usermode == null)
             {
                 usermode = await GetEffectiveUsermode(channelUserSummary);
@@ -268,6 +422,12 @@ namespace CoreWeb.Repository
                 addString += "v";
                 userString += " " + channelUserSummary.UserSummary.Nick;
             }
+
+            //remove banned user
+            if (checkFlagAdded(EUserChannelFlag.EUserChannelFlag_Banned, newModeflags, currentModeflags))
+            {
+                kickUser = true;   
+            }
             if (checkFlagAdded(EUserChannelFlag.EUserChannelFlag_HalfOp, newModeflags, currentModeflags) || checkFlagAdded(EUserChannelFlag.EUserChannelFlag_Op, newModeflags, currentModeflags) || checkFlagAdded(EUserChannelFlag.EUserChannelFlag_Owner, newModeflags, currentModeflags))
             {
                 addString += "o";
@@ -288,7 +448,7 @@ namespace CoreWeb.Repository
             modeString += userString;
 
 
-            if (modeString.Length == 0) return;
+            if (modeString.Length == 0 && !kickUser) return;
 
             ConnectionFactory factory = connectionFactory.Get();
             using (IConnection connection = factory.CreateConnection())
@@ -296,13 +456,30 @@ namespace CoreWeb.Repository
                 using (IModel channel = connection.CreateModel())
                 {
 
-                    var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(modeString);
-                    String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", channelId.ToString(), Convert.ToBase64String(modeStringBytes));
-                    byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
-
                     IBasicProperties props = channel.CreateBasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                    if(modeString.Length > 0) {
+                        var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(modeString);
+                        String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", channelId.ToString(), Convert.ToBase64String(modeStringBytes));
+                        byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message); 
+                        channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);                        
+                    }
+
+
+                    if(kickUser) {
+                        byte[] nameBytes = System.Text.Encoding.UTF8.GetBytes("Banned");
+                        String kickMessage = String.Format("\\type\\KICK\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1\\toUserSummary\\{2}", channelId.ToString(), Convert.ToBase64String(nameBytes), channelUserSummary.UserSummary.ToString());
+                        byte[] kickMessageBytes = System.Text.Encoding.UTF8.GetBytes(kickMessage);
+                        channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, kickMessageBytes);
+                        newModeflags = 0;
+                        db.SortedSetRemove("channel_" + channelId + "_users", channelUserSummary.UserSummary.Id);
+                        db.KeyDelete("channel_" + channelId + "_user_" + channelUserSummary.UserSummary.Id);
+
+                    }
+
+                    String modeflagsMessage = string.Format("\\type\\UPDATE_USER_CHANMODEFLAGS\\to\\{0}\\user_id\\{1}\\modeflags\\{2}", channelUserSummary.ChannelName, channelUserSummary.UserSummary.Id, newModeflags);
+                    byte[] modeflagsMessageBytes = System.Text.Encoding.UTF8.GetBytes(modeflagsMessage);
+                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCHAT_KEYUPDATE_KEY, props, modeflagsMessageBytes);
                 }
             }
         }

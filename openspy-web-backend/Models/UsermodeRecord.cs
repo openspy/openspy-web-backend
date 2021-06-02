@@ -38,10 +38,11 @@ namespace CoreWeb.Models
         [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime? expiresAt { get; set; }
 
-        public string ircNick { get; set; }
+        public string setByNick { get; set; }
         public string setByHost { get; set; }
         public int setByPid { get; set; }
         [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime setAt { get; set; } = DateTime.UtcNow;
+        public bool isGlobal {get; set;}
     }
 }

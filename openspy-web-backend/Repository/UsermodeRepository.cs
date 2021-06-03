@@ -160,17 +160,28 @@ namespace CoreWeb.Repository
             }
             if (lookup.hostmask != null)
             {
-                if (lookup.channelmask.Contains("*")) //wildcard search
+                if (lookup.hostmask.Contains("*")) //wildcard search
                 {
                     var mask = lookup.hostmask.Replace("*", "%");
                     query = query.Where(b => EF.Functions.Like(b.hostmask, mask) || b.hostmask == null);
-                } else
-                {
-                    query = query.Where(b => b.hostmask == lookup.hostmask || b.hostmask == null);
                 }
             }
             query = query.Where(b => b.expiresAt == null || b.expiresAt > DateTime.UtcNow);
-            return await query.ToListAsync();
+            result = await query.ToListAsync();
+
+            IEnumerable<UsermodeRecord> filteredResult = new List<UsermodeRecord>();
+            //perform hostmask reduction... needs to be client side for now :(
+            if(lookup.hostmask != null && lookup.hostmask.Contains("*") == false) {
+                foreach(var item in result) {
+                    if(FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask)) {
+                        filteredResult = filteredResult.Append(item);
+                    }
+                }                
+            } else {
+                filteredResult = result;
+            }
+
+            return filteredResult;
         }
         public Task<bool> Delete(UsermodeLookup lookup)
         {

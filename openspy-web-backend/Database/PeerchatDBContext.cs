@@ -9,6 +9,7 @@ namespace CoreWeb.Database
     public class PeerchatDBContext : DbContext
     {
         public virtual DbSet<UsermodeRecord> Usermode { get; set; }
+        public virtual DbSet<ChanpropsRecord> Chanprops { get; set; }
 
         private IConfiguration configuration;
 
@@ -78,6 +79,65 @@ namespace CoreWeb.Database
 
                 entity.Ignore(e => e.expiresIn);
                 entity.Ignore(e => e.isGlobal);
+            });
+            modelBuilder.Entity<ChanpropsRecord>(entity =>
+            {
+                entity.ToTable("chanprops");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.channelmask)
+                    .IsRequired()
+                    .HasColumnName("channelmask")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.password)
+                    .HasColumnName("password")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.entrymsg)
+                    .HasColumnName("entrymsg")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.comment)
+                    .HasColumnName("comment")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.topic)
+                    .HasColumnName("topic")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.expiresAt)
+                    .HasColumnName("expiresAt")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.groupname)
+                    .HasColumnName("groupname")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.limit)
+                    .HasColumnName("limit")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.onlyOwner)
+                    .HasColumnName("onlyOwner")
+                    .HasColumnType("bit");
+
+                entity.Property(e => e.setByNick)
+                    .HasColumnName("setByNick")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.setByPid)
+                    .HasColumnName("setByPid")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.setByHost)
+                    .HasColumnName("setByHost")
+                    .HasColumnType("text");
+
+
             });
             base.OnModelCreating(modelBuilder);
         }

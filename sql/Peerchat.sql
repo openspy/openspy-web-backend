@@ -14,3 +14,21 @@ create table usermodes (
     setByPid int NULL,
     setAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+create table Peerchat.chanprops (
+    id int auto_increment PRIMARY KEY,
+	channelmask text NOT NULL,
+    password text NULL,
+    entrymsg text NULL,
+    comment text NULL,
+    topic text NULL,
+    expiresAt DATETIME NULL,
+    groupname text NULL,
+    `limit` int NULL,
+    modeflags int NOT NULL DEFAULT 0,
+    onlyOwner BIT NOT NULL DEFAULT 0,
+    setByNick text NULL,
+    setByPid INT NULL,
+    setByHost text NULL,
+    setAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

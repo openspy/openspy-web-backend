@@ -30,5 +30,8 @@ namespace CoreWeb.Models
         public string setByNick {get; set;}
         public int setByPid {get; set;}
         public string setByHost {get; set;}
+
+        //not stored in db... just used for kick on create logic
+        public bool? kickExisting {get; set;}
     }
 }

@@ -138,6 +138,9 @@ namespace CoreWeb.Database
                     .HasColumnType("text");
 
 
+                entity.Ignore(e => e.kickExisting);
+
+
             });
             base.OnModelCreating(modelBuilder);
         }

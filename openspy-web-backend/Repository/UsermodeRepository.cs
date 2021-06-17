@@ -160,11 +160,11 @@ namespace CoreWeb.Repository
             List<UsermodeRecord> filteredResult = cachedResult ?? new List<UsermodeRecord>();
             //perform wildcard reduction... needs to be client side for now :(
             foreach(var item in result) {
-                    bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
-                    bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
-                    if(hostMatch && chanMatch) {
-                        filteredResult.Add(item);
-                    }
+                bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
+                bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
+                if(hostMatch && chanMatch) {
+                    filteredResult.Add(item);
+                }
             }
 
             return filteredResult;

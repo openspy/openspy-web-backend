@@ -20,6 +20,7 @@ using CoreWeb.Crypto;
 using System.Reflection;
 using System.IO;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace CoreWeb
 {
@@ -105,6 +106,7 @@ namespace CoreWeb
 
             services.AddMvc(opt =>
             {
+                opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
             .AddJsonOptions(options =>

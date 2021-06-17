@@ -8,6 +8,7 @@ create table usermodes (
     machineid text NULL,
     profileid int NULL,
     modeflags int NOT NULL DEFAULT 0,
+    gameid int NULL,
     expiresAt DATETIME NULL,
     ircNick text NULL,
     setByHost text NULL,

@@ -57,6 +57,10 @@ namespace CoreWeb.Database
                     .HasColumnName("modeflags")
                     .HasColumnType("int(11)");
 
+                entity.Property(e => e.gameid)
+                    .HasColumnName("gameid")
+                    .HasColumnType("int(11)");
+
                 entity.Property(e => e.expiresAt)
                     .HasColumnName("expiresAt")
                     .HasColumnType("datetime");

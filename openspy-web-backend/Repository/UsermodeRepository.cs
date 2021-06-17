@@ -21,6 +21,7 @@ namespace CoreWeb.Repository
         EUserChannelFlag_Invited = 1 << 7,
         EUserChannelFlag_Quiet = 1 << 8,
         EUserChannelFlag_Banned = 1 << 9,
+        EUserChannelFlag_GameidPermitted = 1 << 10,
     };
 
     public class UsermodeRepository : IRepository<UsermodeRecord, UsermodeLookup>
@@ -92,6 +93,7 @@ namespace CoreWeb.Repository
                 foreach (var entry in entries)
                 {
                     int id = int.Parse(entry.Element.ToString());
+                    if(id > 0) continue;
                     var usermode = LookupTemporaryUsermode(id);
                     if(usermode != null && TestUsermodeMatches(lookup, usermode)) {
                         result.Add(usermode);
@@ -118,19 +120,17 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<UsermodeRecord>> Lookup(UsermodeLookup lookup)
         {
-            IEnumerable<UsermodeRecord> result;
+            List<UsermodeRecord> result, cachedResult = null;
             if((lookup.Id.HasValue && lookup.Id < 0)) {
                 result = new List<UsermodeRecord>();
                 var item = LookupTemporaryUsermode(lookup.Id.Value);
                 if(item == null)
                     return result;
-                result = result.Append(item);
+                result.Add(item);
                 return result;
             } else if ((lookup.channelmask != null && lookup.channelmask.Contains("*") == false)) {
                 //lookup cache
-                result = LookupCachedUsermodes(lookup);
-                if(result.Count() > 0)
-                    return result;
+                cachedResult = new List<UsermodeRecord>(LookupCachedUsermodes(lookup));
             }
 
             
@@ -140,16 +140,6 @@ namespace CoreWeb.Repository
                 query = peerChatDb.Usermode.Where(b => b.Id == lookup.Id.Value);
             }
             
-            if (lookup.channelmask != null && lookup.channelmask.CompareTo("*") != 0) { //chan mask set... and global wildcard
-                if(lookup.channelmask.Contains("*")) //wildcard search
-                {
-                    var mask = lookup.channelmask.Replace("*", "%");
-                    query = query.Where(b => EF.Functions.Like(b.channelmask, mask));
-                } else
-                {
-                    query = query.Where(b => b.channelmask == lookup.channelmask);
-                }
-            }
             if (lookup.profileid.HasValue)
             {
                 query = query.Where(b => b.profileid == lookup.profileid.Value || !b.profileid.HasValue);
@@ -158,27 +148,23 @@ namespace CoreWeb.Repository
             {
                 query = query.Where(b => b.machineid == lookup.machineid || b.machineid == null);
             }
-            if (lookup.hostmask != null)
+
+            if (lookup.gameid.HasValue)
             {
-                if (lookup.hostmask.Contains("*")) //wildcard search
-                {
-                    var mask = lookup.hostmask.Replace("*", "%");
-                    query = query.Where(b => EF.Functions.Like(b.hostmask, mask) || b.hostmask == null);
-                }
+                query = query.Where(b => b.gameid == lookup.gameid || !b.gameid.HasValue);
             }
+
             query = query.Where(b => b.expiresAt == null || b.expiresAt > DateTime.UtcNow);
             result = await query.ToListAsync();
 
-            IEnumerable<UsermodeRecord> filteredResult = new List<UsermodeRecord>();
-            //perform hostmask reduction... needs to be client side for now :(
-            if(lookup.hostmask != null && lookup.hostmask.Contains("*") == false) {
-                foreach(var item in result) {
-                    if(FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask)) {
-                        filteredResult = filteredResult.Append(item);
+            List<UsermodeRecord> filteredResult = cachedResult ?? new List<UsermodeRecord>();
+            //perform wildcard reduction... needs to be client side for now :(
+            foreach(var item in result) {
+                    bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
+                    bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
+                    if(hostMatch && chanMatch) {
+                        filteredResult.Add(item);
                     }
-                }                
-            } else {
-                filteredResult = result;
             }
 
             return filteredResult;
@@ -369,7 +355,7 @@ namespace CoreWeb.Repository
             } while ((cursor?.Cursor ?? 0) != 0);
 
             //
-            if(model.hostmask.Length > 0 && (model.modeflags & (int)EUserChannelFlag.EUserChannelFlag_Banned) != 0)
+            if(!string.IsNullOrEmpty(model.hostmask) && model.hostmask.Length > 0 && (model.modeflags & (int)EUserChannelFlag.EUserChannelFlag_Banned) != 0)
             {
                 ConnectionFactory factory = connectionFactory.Get();
                 using (IConnection connection = factory.CreateConnection())
@@ -500,6 +486,7 @@ namespace CoreWeb.Repository
             lookup.channelmask = channelUserSummary.ChannelName;
             lookup.hostmask = channelUserSummary.UserSummary.Hostname;
             lookup.profileid = channelUserSummary.UserSummary.Profileid;
+            lookup.gameid = channelUserSummary.UserSummary.Gameid;
 
             var record = new UsermodeRecord();
             record.channelmask = channelUserSummary.ChannelName;

@@ -13,6 +13,7 @@ namespace CoreWeb.Models
         public string hostmask {get; set;}
         public string machineid { get; set; }
         public int? profileid {get; set;}
+        public int? gameid { get; set; }
     };
     public class UsermodeRecord
     {
@@ -44,5 +45,6 @@ namespace CoreWeb.Models
         [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime setAt { get; set; } = DateTime.UtcNow;
         public bool isGlobal {get; set;}
+        public int? gameid { get; set; }
     }
 }

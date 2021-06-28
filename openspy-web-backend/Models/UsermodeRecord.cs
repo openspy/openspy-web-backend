@@ -14,6 +14,7 @@ namespace CoreWeb.Models
         public string machineid { get; set; }
         public int? profileid {get; set;}
         public int? gameid { get; set; }
+        public bool? expired {get; set;}
     };
     public class UsermodeRecord
     {

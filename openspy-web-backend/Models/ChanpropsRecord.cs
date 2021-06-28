@@ -10,6 +10,10 @@ namespace CoreWeb.Models
     public class ChanpropsLookup {
         public int? Id {get; set;}
         public string channelmask {get; set;}
+        public int? modeflagMask {get; set;}
+        public bool? exists {get; set;}
+
+        public bool? expired {get; set;}
     };
     public class ChanpropsRecord
     {

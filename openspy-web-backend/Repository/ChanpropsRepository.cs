@@ -79,6 +79,32 @@ namespace CoreWeb.Repository
             return false;
         }
 
+        private IEnumerable<ChanpropsRecord> PerformExistsFiltering(IEnumerable<ChanpropsRecord> input, bool exists)  {
+            IEnumerable<ChanpropsRecord> result = new List<ChanpropsRecord>();
+            var db = peerChatCacheDb.GetDatabase();
+            foreach(var item in input) {
+                var key = "channelname_" + item.channelmask;
+                var keyExists = db.KeyExists(key);
+                if(keyExists == exists) {
+                    result = result.Append(item);
+                }                
+            }
+            return result;
+        }
+
+
+        private IEnumerable<ChanpropsRecord> PerformExpiredFiltering(IEnumerable<ChanpropsRecord> input, bool expired)  {
+            IEnumerable<ChanpropsRecord> result = new List<ChanpropsRecord>();
+            
+            foreach(var item in input) {
+                bool isExpired = item.expiresAt.HasValue && item.expiresAt <= item.setAt;
+                if(expired == isExpired) {
+                    result = result.Append(item);
+                }
+            }
+            return result;
+        }
+
         public async Task<IEnumerable<ChanpropsRecord>> Lookup(ChanpropsLookup lookup)
         {
             var query = peerChatDb.Chanprops as IQueryable<ChanpropsRecord>;
@@ -87,8 +113,19 @@ namespace CoreWeb.Repository
                 query = peerChatDb.Chanprops.Where(b => b.Id == lookup.Id.Value);
             } else if(lookup.channelmask != null) {
                 query = peerChatDb.Chanprops.Where(b => b.channelmask.Equals(lookup.channelmask));
+            } else if(lookup.modeflagMask.HasValue) {
+                query = peerChatDb.Chanprops.Where(b => (b.modeflags & lookup.modeflagMask.Value) != 0);
             }
-            return await query.ToListAsync();
+
+            IEnumerable<ChanpropsRecord> result = await query.ToListAsync();
+            if(lookup.exists.HasValue) {
+                result = PerformExistsFiltering(result, lookup.exists.Value);
+            }
+
+            if(lookup.expired.HasValue) {
+                result = PerformExpiredFiltering(result, lookup.expired.Value);
+            }
+            return result;
         }
 
         public Task<ChanpropsRecord> Update(ChanpropsRecord model)
@@ -318,6 +355,10 @@ namespace CoreWeb.Repository
             await db.HashSetAsync(key, "modeflags", record.modeflags);
             SendUpdateBasicModes(channel_id, current_modeflags, record.modeflags);
             await db.HashSetAsync(key, "entrymsg", record.entrymsg);            
+
+            if(!string.IsNullOrEmpty(record.groupname)) {
+                await db.HashSetAsync(key, "custkey_groupname", record.groupname);
+            }
         }
         private async Task ResyncChanPropsForChanMask(string channel_mask, bool kickExisting) {
             var db = peerChatCacheDb.GetDatabase();

@@ -160,14 +160,29 @@ namespace CoreWeb.Repository
             List<UsermodeRecord> filteredResult = cachedResult ?? new List<UsermodeRecord>();
             //perform wildcard reduction... needs to be client side for now :(
             foreach(var item in result) {
-                bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
-                bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
+                bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(item.hostmask, lookup.hostmask) || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
+                bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(item.channelmask, lookup.channelmask) || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
                 if(hostMatch && chanMatch) {
                     filteredResult.Add(item);
                 }
             }
+            
 
+            if(lookup.expired.HasValue) {
+                filteredResult = PerformExpiredFiltering(filteredResult, lookup.expired.Value);
+            }
             return filteredResult;
+        }
+        private List<UsermodeRecord> PerformExpiredFiltering(List<UsermodeRecord> input, bool expired)  {
+            List<UsermodeRecord> result = new List<UsermodeRecord>();
+            
+            foreach(var item in input) {
+                bool isExpired = item.expiresAt.HasValue && item.expiresAt <= item.setAt;
+                if(expired == isExpired) {
+                    result.Add(item);
+                }
+            }
+            return result;
         }
         public Task<bool> Delete(UsermodeLookup lookup)
         {

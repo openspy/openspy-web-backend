@@ -33,3 +33,9 @@ create table Peerchat.chanprops (
     setByHost text NULL,
     setAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+create table globalopers ( 
+	id int auto_increment PRIMARY KEY,
+    profileid int NOT NULL,
+    operflags int NOT NULL,
+    setAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

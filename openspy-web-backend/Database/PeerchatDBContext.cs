@@ -10,6 +10,7 @@ namespace CoreWeb.Database
     {
         public virtual DbSet<UsermodeRecord> Usermode { get; set; }
         public virtual DbSet<ChanpropsRecord> Chanprops { get; set; }
+        public virtual DbSet<GlobalOpersRecord> GlobalOpers { get; set; }
 
         private IConfiguration configuration;
 
@@ -144,7 +145,23 @@ namespace CoreWeb.Database
 
                 entity.Ignore(e => e.kickExisting);
 
+            });
 
+            modelBuilder.Entity<GlobalOpersRecord>(entity =>
+            {
+                entity.ToTable("globalopers");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.profileid)
+                    .HasColumnName("profileid")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.operflags)
+                    .HasColumnName("operflags")
+                    .HasColumnType("int(11)");
             });
             base.OnModelCreating(modelBuilder);
         }

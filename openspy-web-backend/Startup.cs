@@ -150,6 +150,7 @@ namespace CoreWeb
             services.AddScoped<IRepository<CdKey, CdKeyLookup>, CdKeyRepository>();
             services.AddScoped<IRepository<UsermodeRecord, UsermodeLookup>, UsermodeRepository>();
             services.AddScoped<IRepository<ChanpropsRecord, ChanpropsLookup>, ChanpropsRepository>();
+            services.AddScoped<IRepository<GlobalOpersRecord, GlobalOpersLookup>, GlobalOpersRepository>();
             services.AddScoped<IRepository<EntitledGameFeature, EntitledGameFeatureLookup>, GameFeatureRepository>();
             services.AddScoped<IRepository<ObjectInventoryItem, ObjectInventoryLookup>, ObjectInventoryRepository>();
             //ObjectInventoryRepository : IRepository<ObjectInventoryItem, ObjectInventoryLookup>

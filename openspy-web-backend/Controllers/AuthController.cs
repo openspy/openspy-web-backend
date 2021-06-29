@@ -144,5 +144,49 @@ namespace CoreWeb.Controllers
             var session = (await sessionRepository.Lookup(lookup)).FirstOrDefault();
             return session;
         }
+
+        [HttpPost("TestPreAuth")]
+        public async Task<AuthResponse> TestPreAuth([FromBody] AuthTicketData request)
+        {
+            
+            var auth_data = (await ((AuthSessionRepository)sessionRepository).decodeAuthToken(request.token));
+            String true_sig = auth_data["true_signature"].ToString();
+            if(!true_sig.Equals(request.challenge)) {
+                throw new AuthInvalidCredentialsException();
+            }
+            AuthResponse response = new AuthResponse();
+            int profileid = 0, userid = 0;
+            if(int.TryParse(auth_data["profileId"].ToString(), out profileid)) {
+                response.profile = (await profileRepository.Lookup(new ProfileLookup { id = profileid})).FirstOrDefault();
+                if(response.profile == null) {
+                    throw new NoSuchUserException();
+                }
+            }
+
+            if(int.TryParse(auth_data["userId"].ToString(), out userid)) {
+                response.user = (await userRepository.Lookup(new UserLookup { id = userid})).FirstOrDefault();
+                if(response.user == null) {
+                    throw new NoSuchUserException();
+                }
+            }
+
+            Session session = new Session();
+            session.profile = response.profile;
+            session.user = response.user;
+
+            int expiresAt = 0;
+            if(int.TryParse(auth_data["expiresAt"].ToString(), out expiresAt)) {
+                System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+                dtDateTime = dtDateTime.AddSeconds(expiresAt).ToLocalTime();
+                session.expiresAt = dtDateTime;
+                response.session = await sessionRepository.Create(session);
+            }
+            
+            
+            return response;
+            
+        }
+
+        //
     }
 }

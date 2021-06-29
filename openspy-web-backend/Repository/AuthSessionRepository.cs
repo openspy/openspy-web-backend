@@ -22,6 +22,7 @@ namespace CoreWeb.Repository
         private PresencePreAuthProvider rsaProvider;
         private TimeSpan defaultTimeSpan;
         private SessionCacheDatabase sessionCache;
+        
 
         private readonly string AUTHSESSION_EXCHANGE = "openspy.core";
         private readonly string AUTHSESSION_ROUTING_KEY = "auth.events";
@@ -173,8 +174,13 @@ namespace CoreWeb.Repository
 
                 authData["profileId"] = profile.Id.ToString();
                 authData["userId"] = profile.Userid.ToString();
-                if (expiresAt.HasValue)
-                    authData["expiresAt"] = expiresAt.Value.ToFileTimeUtc().ToString();
+
+                if(expiresAt.HasValue) {
+                    var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                    TimeSpan elapsedTime = (DateTime)expiresAt.Value - Epoch;
+                    var ts = (int)elapsedTime.TotalSeconds;
+                    authData["expiresAt"] = ts.ToString();
+                }
 
                 var json_buff = JsonConvert.SerializeObject(authData);
                 var json_bytes = Encoding.UTF8.GetBytes(json_buff);

@@ -60,10 +60,6 @@ namespace CoreWeb.Controllers.Presence
         public Session session;
         public bool success;
     };
-    public class GenAuthTicketResponse {
-        public String token;
-        public String challenge;
-    };
 
     enum ProofType
     {
@@ -92,9 +88,9 @@ namespace CoreWeb.Controllers.Presence
             this.sessionRepository = (AuthSessionRepository)sessionRepository;
         }
         [HttpPost("GenAuthTicket")]
-        public async Task<GenAuthTicketResponse> GenAuthTicket([FromBody] AuthRequest authRequest)
+        public async Task<AuthTicketData> GenAuthTicket([FromBody] AuthRequest authRequest)
         {
-            GenAuthTicketResponse response = new GenAuthTicketResponse();
+            AuthTicketData response = new AuthTicketData();
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
             if (profile == null) throw new NoSuchUserException();
 

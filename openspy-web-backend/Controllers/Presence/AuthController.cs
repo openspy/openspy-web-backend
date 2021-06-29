@@ -115,9 +115,12 @@ namespace CoreWeb.Controllers.Presence
             AuthResponse response = new AuthResponse();
             if (dict.Keys.Contains("expiresAt"))
             {
-                long fileTime;
-                long.TryParse(dict["expiresAt"], out fileTime);
-                expireTime = DateTime.FromFileTimeUtc(fileTime);
+                long expiresAtTS;
+                if(!long.TryParse(dict["expiresAt"], out expiresAtTS)) {
+                    throw new AuthInvalidCredentialsException();
+                }
+                System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+                expireTime = dtDateTime.AddSeconds(expiresAtTS).ToLocalTime();
                 if (DateTime.UtcNow > expireTime)
                 {
                     throw new AuthInvalidCredentialsException();

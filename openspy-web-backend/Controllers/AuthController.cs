@@ -10,6 +10,8 @@ using CoreWeb.Exception;
 using Microsoft.AspNetCore.Authorization;
 using CoreWeb.Filters;
 using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CoreWeb.Controllers
 {
@@ -120,7 +122,23 @@ namespace CoreWeb.Controllers
 
             if(request.password.CompareTo(user.Password) != 0)
             {
-                throw new AuthInvalidCredentialsException();
+                /*Check MD5 string, for peerchat support (md5 hash is sent instead)*/
+                String md5String;
+                using (MD5 md5Hash = MD5.Create())
+                {
+                    StringBuilder sBuilder = new StringBuilder();
+                    byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(user.Password));
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        sBuilder.Append(data[i].ToString("x2"));
+                    }
+                    md5String = sBuilder.ToString();
+                }
+                if(request.password.CompareTo(md5String) != 0)
+                {
+                    throw new AuthInvalidCredentialsException();
+                }
+                
             }
 
             response.profile = profile;

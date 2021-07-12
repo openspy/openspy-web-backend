@@ -139,7 +139,7 @@ namespace CoreWeb.Repository
             ChanpropsRecord longestMatch = null;
             int longestMatchLength = 0;
             foreach(var item in allChanProps) {
-                if(FastWildcard.FastWildcard.IsMatch(channel_name, item.channelmask)) {
+                if(IRCMatch.match(item.channelmask, channel_name) == 0) {
                     if(item.channelmask.Length > longestMatchLength) {
                         longestMatchLength = item.channelmask.Length;
                         longestMatch = item;
@@ -316,16 +316,24 @@ namespace CoreWeb.Repository
             }
 
             var current_topic = db.HashGet(key, "topic");
-            if(!current_topic.Equals(record.topic)) {
+            if(string.IsNullOrEmpty(record.topic)) {
+                    db.HashDelete(key, "topic");
+                    db.HashDelete(key, "topic_user");
+                    db.HashDelete(key, "topic_time");
+            }
+            else if(!current_topic.Equals(record.topic)) {
                 db.HashSet(key, "topic", record.topic);
+
+                var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                TimeSpan elapsedTime = (DateTime)record.setAt - Epoch;
+                var setAt = ((int)elapsedTime.TotalSeconds);
+                await db.HashSetAsync(key, "topic_time", setAt);
+                await db.HashSetAsync(key, "topic_user", "SERVER");
+                
                 SendUpdateTopic(channel_id, record);
             }
 
-            var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            TimeSpan elapsedTime = (DateTime)record.setAt - Epoch;
-            var setAt = ((int)elapsedTime.TotalSeconds);
-            await db.HashSetAsync(key, "topic_time", setAt);
-            await db.HashSetAsync(key, "topic_user", "SERVER");
+
 
             
             var current_password = db.HashGet(key, "password");

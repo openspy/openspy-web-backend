@@ -149,7 +149,9 @@ namespace CoreWeb.Controllers
             session.user = user;
             if(request.expiresIn.HasValue)
                 session.expiresIn = request.expiresIn;
-            response.session = await sessionRepository.Create(session);
+
+            if(profile != null && user != null)
+                response.session = await sessionRepository.Create(session);
 
             return response;
         }

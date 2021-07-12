@@ -111,7 +111,7 @@ namespace CoreWeb.Repository
                     return false;
             }
             if(!string.IsNullOrEmpty(usermode.hostmask) && !string.IsNullOrEmpty(lookup.hostmask)) {
-                return FastWildcard.FastWildcard.IsMatch(lookup.hostmask, usermode.hostmask);
+                return IRCMatch.match(usermode.hostmask, lookup.hostmask) == 0;
             }
             if(!string.IsNullOrEmpty(usermode.machineid)) {
                 return lookup.machineid.CompareTo(usermode.machineid) == 0;
@@ -160,8 +160,8 @@ namespace CoreWeb.Repository
             List<UsermodeRecord> filteredResult = cachedResult ?? new List<UsermodeRecord>();
             //perform wildcard reduction... needs to be client side for now :(
             foreach(var item in result) {
-                bool hostMatch = lookup.hostmask == null || item.hostmask == null || FastWildcard.FastWildcard.IsMatch(item.hostmask, lookup.hostmask) || FastWildcard.FastWildcard.IsMatch(lookup.hostmask, item.hostmask);
-                bool chanMatch = lookup.channelmask == null || item.channelmask == null || FastWildcard.FastWildcard.IsMatch(item.channelmask, lookup.channelmask) || FastWildcard.FastWildcard.IsMatch(lookup.channelmask, item.channelmask);
+                bool hostMatch = lookup.hostmask == null || item.hostmask == null || IRCMatch.match(item.hostmask, lookup.hostmask) == 0;
+                bool chanMatch = lookup.channelmask == null || item.channelmask == null || IRCMatch.match(item.channelmask, lookup.channelmask) == 0;
                 if(hostMatch && chanMatch) {
                     filteredResult.Add(item);
                 }

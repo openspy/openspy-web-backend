@@ -7,7 +7,8 @@ namespace CoreWeb.Models
     public class UserLookup
     {
         public int? id;
-        public String email;
+        private string _email;
+        public string email { get { return _email; } set { _email  = value.ToLower();} }
         public int? partnercode;
     }
     public class User
@@ -21,7 +22,9 @@ namespace CoreWeb.Models
         }
 
         public int Id { get; set; }
-        public string Email { get; set; }
+
+        private string _email;
+        public string Email { get { return _email; } set { _email  = value.ToLower();} }
         [JsonIgnoreAttribute]
         public string Password { get; set; }
         public int? Videocard1ram { get; set; }

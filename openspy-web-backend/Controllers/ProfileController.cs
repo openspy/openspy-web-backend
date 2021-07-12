@@ -69,5 +69,13 @@ namespace CoreWeb.Controllers
 
             return await base.Delete(lookup);
         }
+
+        // POST api/<controller>
+        [HttpPost("GetNameSuggestions")]
+        [Authorize(Policy = "ProfileManage")]
+        public Task<IEnumerable<String>> GetNameSuggestions([FromBody]ProfileSuggestionRequest request)
+        {
+            return this.profileRepository.GetNameSuggestions(request);
+        }
     }
 }

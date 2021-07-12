@@ -263,5 +263,24 @@ namespace CoreWeb.Repository
             }
             return true;
         }
+        public async Task<IEnumerable<String>> GetNameSuggestions(ProfileSuggestionRequest request) {
+            var preferredNameInUse = await CheckUniqueNickInUse(request.preferredName, request.namespaceid, null);
+            List<String> results = new List<String>();
+            if(preferredNameInUse.Item1 == false) {
+                results.Add(request.preferredName);
+            }
+
+            var rnd = new Random();
+            while(results.Count < request.num_suggestions) {
+
+                string name = request.preferredName + "_" + rnd.Next(0, 1000);
+                var nameInUse = await CheckUniqueNickInUse(name, request.namespaceid, null);
+                if(nameInUse.Item1 == false) {
+                    results.Add(name);
+                }
+            }
+
+            return results;
+        }
     }
 }

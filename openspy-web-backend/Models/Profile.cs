@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 
 namespace CoreWeb.Models
 {
+    public class ProfileSuggestionRequest {
+        public int num_suggestions {get; set;}
+        public int namespaceid {get; set;}
+        public String preferredName;
+    };
     public class ProfileLookup
     {
         public int? id;

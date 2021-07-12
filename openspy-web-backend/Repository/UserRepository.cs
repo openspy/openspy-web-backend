@@ -29,7 +29,7 @@ namespace CoreWeb.Repository
             }
             if (lookup.email != null)
             {
-                query = query.Where(b => b.Email == lookup.email);
+                query = query.Where(b => b.Email.Equals(lookup.email));
                 is_wide = false;
             }
             if (is_wide) //too many results would be found... return no results

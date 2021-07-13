@@ -34,7 +34,7 @@ namespace CoreWeb.Repository
         };
         public ChanpropsRepository(PeerchatDBContext peerChatDb, PeerchatCacheDatabase peerChatCacheDb, IMQConnectionFactory connectionFactory)
         {
-            PEERCHAT_EXCHANGE = "openspy.core";
+            PEERCHAT_EXCHANGE = "peerchat.core";
             PEERCAHT_CLIENT_MESSAGE_KEY = "peerchat.client-messages";
             PEERCHAT_KEYUPDATE_KEY = "peerchat.keyupdate-messages";
             this.peerChatDb = peerChatDb;

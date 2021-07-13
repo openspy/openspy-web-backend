@@ -26,7 +26,6 @@ namespace CoreWeb.Repository
 
     public class UsermodeRepository : IRepository<UsermodeRecord, UsermodeLookup>
     {
-        //PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY
         private PeerchatDBContext peerChatDb;
         private PeerchatCacheDatabase peerChatCacheDb;
         private IMQConnectionFactory connectionFactory;
@@ -35,7 +34,7 @@ namespace CoreWeb.Repository
         private String PEERCHAT_KEYUPDATE_KEY;
         public UsermodeRepository(PeerchatDBContext peerChatDb, PeerchatCacheDatabase peerChatCacheDb, IMQConnectionFactory connectionFactory)
         {
-            PEERCHAT_EXCHANGE = "openspy.core";
+            PEERCHAT_EXCHANGE = "peerchat.core";
             PEERCAHT_CLIENT_MESSAGE_KEY = "peerchat.client-messages";
             PEERCHAT_KEYUPDATE_KEY = "peerchat.keyupdate-messages";
             this.peerChatDb = peerChatDb;

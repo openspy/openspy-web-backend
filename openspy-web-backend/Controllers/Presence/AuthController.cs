@@ -216,14 +216,23 @@ namespace CoreWeb.Controllers.Presence
                 }
             }
             var profile = (await profileRepository.Lookup(authRequest.profile)).FirstOrDefault();
-            if (profile == null) throw new NoSuchUserException();
+            if (profile == null) {
+                switch(type) {
+                    case ProofType.ProofType_NickEmail:
+                        throw new NickInvalidException();
+                    case ProofType.ProofType_Unique:
+                        throw new UniqueNickInvalidException();
+                    default:
+                        throw new AuthInvalidCredentialsException();
+
+                }
+            }
 
             UserLookup lookup = new UserLookup();
             lookup.id = profile.Userid;
-            profile.User = profile.User ?? (await userRepository.Lookup(lookup)).FirstOrDefault(); ;
+            profile.User = profile.User ?? (await userRepository.Lookup(lookup)).FirstOrDefault();
 
             String client_proof = GetPasswordProof(profile, authRequest, type, true);
-
 
             if (!client_proof.Equals(authRequest.client_response))
             {

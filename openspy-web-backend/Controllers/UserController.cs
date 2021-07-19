@@ -123,7 +123,7 @@ namespace CoreWeb.Controllers
             user.email = value.Email;
             user.partnercode = value.Partnercode;
             User userModel = (await userRepository.Lookup(user)).FirstOrDefault();
-            if(userModel != null)
+            if(userModel != null && userModel.Id != value.Id)
             {
                 throw new UserExistsException(userModel);
             }

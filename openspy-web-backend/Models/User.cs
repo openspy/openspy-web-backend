@@ -21,6 +21,20 @@ namespace CoreWeb.Models
             Profiles = new HashSet<Profile>();
         }
 
+        public void Copy(User src) {
+            Email = src.Email;
+            Password = src.Password;
+            Videocard1ram = src.Videocard1ram;
+            Videocard2ram = src.Videocard2ram;
+            Cpuspeed = src.Cpuspeed;
+            Cpubrandid = src.Cpubrandid;
+            Connectionspeed = src.Connectionspeed;
+            Hasnetwork = src.Hasnetwork;
+            Publicmask = src.Publicmask;
+            EmailVerified = src.EmailVerified;
+            Deleted = src.Deleted;
+        }
+
         public int Id { get; set; }
 
         private string _email;
@@ -34,7 +48,7 @@ namespace CoreWeb.Models
         public int? Connectionspeed { get; set; }
         public bool? Hasnetwork { get; set; }
         public int Partnercode { get; set; }
-        public System.Int64 Publicmask { get; set; }
+        public System.Int32 Publicmask { get; set; }
         public bool EmailVerified { get; set; }
         public bool Deleted { get; set; }
 

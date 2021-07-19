@@ -362,6 +362,7 @@ namespace CoreWeb.Database
 
                 entity.Property(e => e.Publicmask)
                     .HasColumnName("publicmask")
+                    .HasColumnType("int(11)")
                     .HasDefaultValueSql("'0'");
 
                 entity.Property(e => e.Videocard1ram)

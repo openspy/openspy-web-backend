@@ -60,7 +60,13 @@ namespace CoreWeb.Repository
         {
             return Task.Run(async () =>
             {
-                var entry = gameTrackerDb.Update<User>(model);
+                UserLookup userLookup = new UserLookup();
+                userLookup.id = model.Id;
+                User userModel = (await Lookup(userLookup)).FirstOrDefault();
+
+                userModel.Copy(model);
+
+                var entry = gameTrackerDb.Update<User>(userModel);
                 await gameTrackerDb.SaveChangesAsync();
                 return entry.Entity;
             });

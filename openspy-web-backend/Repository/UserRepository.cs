@@ -10,13 +10,16 @@ namespace CoreWeb.Repository
 {
     public class UserRepository : IRepository<User, UserLookup>
     {
+        private const int REDIS_SESSION_DB = 3;
         private readonly int PARTNERID_GAMESPY = 0;
         private readonly int PARTNERID_IGN = 10;
         private readonly int PARTNERID_EA = 20;
         private GameTrackerDBContext gameTrackerDb;
-        public UserRepository(GameTrackerDBContext gameTrackerDb)
+        private SessionCacheDatabase sessionCache;
+        public UserRepository(GameTrackerDBContext gameTrackerDb, SessionCacheDatabase sessionCache)
         {
             this.gameTrackerDb = gameTrackerDb;
+            this.sessionCache = sessionCache;
         }
         public async Task<IEnumerable<User>> Lookup(UserLookup lookup)
         {
@@ -50,32 +53,95 @@ namespace CoreWeb.Repository
                 var users = (await Lookup(lookup)).ToList();
                 foreach (var user in users)
                 {
-                    gameTrackerDb.Remove<User>(user);
+                    user.Deleted = true;
+                    gameTrackerDb.Update<User>(user);
                 }
                 var num_modified = await gameTrackerDb.SaveChangesAsync();
                 return users.Count > 0 && num_modified > 0;
             });
         }
-        public Task<User> Update(User model)
+         public async Task<bool> UpdatePassword(int userId, string password) {
+            UserLookup userLookup = new UserLookup();
+            userLookup.id = userId;
+            User userModel = (await Lookup(userLookup)).FirstOrDefault();
+
+            userModel.Password = password;
+
+            var entry = gameTrackerDb.Update<User>(userModel);
+            var saveResult = await gameTrackerDb.SaveChangesAsync();
+            return saveResult > 0;
+         }
+        public async Task<User> Update(User model)
         {
-            return Task.Run(async () =>
-            {
-                UserLookup userLookup = new UserLookup();
-                userLookup.id = model.Id;
-                User userModel = (await Lookup(userLookup)).FirstOrDefault();
+            UserLookup userLookup = new UserLookup();
+            userLookup.id = model.Id;
+            User userModel = (await Lookup(userLookup)).FirstOrDefault();
 
-                userModel.Copy(model);
+            userModel.Copy(model);
 
-                var entry = gameTrackerDb.Update<User>(userModel);
-                await gameTrackerDb.SaveChangesAsync();
-                return entry.Entity;
-            });
+            var entry = gameTrackerDb.Update<User>(userModel);
+            await gameTrackerDb.SaveChangesAsync();
+            return entry.Entity;
         }
         public async Task<User> Create(User model)
         {
             var entry = await gameTrackerDb.AddAsync<User>(model);
             var num_modified = await gameTrackerDb.SaveChangesAsync(true);
             return entry.Entity;
+        }
+        public async Task<bool> SendEmailVerification(User model) {
+            var verify_key = Guid.NewGuid().ToString();
+            var store_key = "verify_" + model.Id;
+            var db = sessionCache.GetDatabase();
+            if(db.KeyExists(store_key)) return false;
+            var result = db.StringSet(store_key, verify_key);
+            db.KeyExpire(store_key, TimeSpan.FromHours(6));
+
+            model.EmailVerified = false;
+            var entry = gameTrackerDb.Update<User>(model);
+            await gameTrackerDb.SaveChangesAsync();
+            return true;    
+        }
+        public async Task<bool> PerformEmailVerification(User model, string verification_key) {
+            var store_key = "verify_" + model.Id;
+            var db = sessionCache.GetDatabase();
+            var result = db.StringGet(store_key);
+            if(!db.KeyExists(store_key)) return false;
+            if(result.CompareTo(verification_key) == 0) {
+                model.EmailVerified = true;
+                var entry = gameTrackerDb.Update<User>(model);
+                await gameTrackerDb.SaveChangesAsync();
+                db.KeyDelete(store_key);
+                return true;
+            }
+            return false;
+        }
+        public async Task<bool> SendPasswordReset(User model) {
+            var verify_key = Guid.NewGuid().ToString();
+            var store_key = "reset_" + model.Id;
+            var db = sessionCache.GetDatabase();
+            if(db.KeyExists(store_key)) return false;
+            var result = db.StringSet(store_key, verify_key);            
+            db.KeyExpire(store_key, TimeSpan.FromHours(6));
+
+            model.EmailVerified = false;
+            var entry = gameTrackerDb.Update<User>(model);
+            await gameTrackerDb.SaveChangesAsync();
+            return true;    
+        }
+        public async Task<bool> PerformPasswordReset(User model, string verification_key, string password) {
+            var store_key = "reset_" + model.Id;
+            var db = sessionCache.GetDatabase();
+            var result = db.StringGet(store_key);
+            if(!db.KeyExists(store_key)) return false;
+            if(result.CompareTo(verification_key) == 0) {
+                model.Password = password;
+                var entry = gameTrackerDb.Update<User>(model);
+                await gameTrackerDb.SaveChangesAsync();
+                db.KeyDelete(store_key);
+                return true;
+            }
+            return false;
         }
     }
 }

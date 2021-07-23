@@ -34,6 +34,22 @@ namespace CoreWeb.Controllers
             public User user;
             public Profile profile;
         };
+        public class UpdatePasswordRequest {
+            public string password;
+            public int userId;
+        };
+
+        public class PerformEmailVerificationRequest {
+            public UserLookup userLookup;
+            public string verification_key;
+        }
+
+        public class PerformPasswordResetRequest {
+            public UserLookup userLookup;
+            public string verification_key;
+            public string password;
+        }
+        
 
         /// <summary>
         /// Registers a user, and creats a profile if supplied. If user already exists, and supplied password matches, profile is created if not already existing.
@@ -128,6 +144,52 @@ namespace CoreWeb.Controllers
                 throw new UserExistsException(userModel);
             }
             return await base.Update(value);
+        }
+
+        [HttpPost("UpdatePassword")]
+        public async Task<bool> UpdatePassword([FromBody]UpdatePasswordRequest request)
+        {
+            return await ((UserRepository)userRepository).UpdatePassword(request.userId, request.password);
+        }
+
+        [HttpPost("SendEmailVerification")]
+        public async Task<bool> SendEmailVerification([FromBody]UserLookup userLookup)
+        {
+            User userModel = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+            if(userModel != null) {
+                return await ((UserRepository)userRepository).SendEmailVerification(userModel);
+            }
+            return false;
+        }
+
+        [HttpPost("PerformEmailVerification")]
+        public async Task<bool> PerformEmailVerification([FromBody]PerformEmailVerificationRequest request)
+        {
+            User userModel = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
+            if(userModel != null) {
+                return await ((UserRepository)userRepository).PerformEmailVerification(userModel, request.verification_key);
+            }
+            return false;
+        }
+
+        [HttpPost("SendPasswordReset")]
+        public async Task<bool> SendPasswordReset([FromBody]UserLookup userLookup)
+        {
+            User userModel = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+            if(userModel != null) {
+                return await ((UserRepository)userRepository).SendPasswordReset(userModel);
+            }
+            return false;
+        }
+
+        [HttpPost("PerformPasswordReset")]
+        public async Task<bool> PerformPasswordReset([FromBody]PerformPasswordResetRequest request)
+        {
+            User userModel = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
+            if(userModel != null) {
+                return await ((UserRepository)userRepository).PerformPasswordReset(userModel, request.verification_key, request.password);
+            }
+            return false;
         }
     }
 }

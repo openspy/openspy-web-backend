@@ -198,11 +198,6 @@ namespace CoreWeb.Database
                     .HasColumnName("id")
                     .HasColumnType("int(11)");
 
-                entity.Property(e => e.Admin)
-                    .HasColumnName("admin")
-                    .HasColumnType("tinyint(1)")
-                    .HasDefaultValueSql("'0'");
-
                 entity.Property(e => e.Aimname)
                     .HasColumnName("aimname")
                     .HasColumnType("text");

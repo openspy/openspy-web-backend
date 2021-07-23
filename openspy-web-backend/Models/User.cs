@@ -23,7 +23,8 @@ namespace CoreWeb.Models
 
         public void Copy(User src) {
             Email = src.Email;
-            Password = src.Password;
+            if(src.Password != null)
+                Password = src.Password;
             Videocard1ram = src.Videocard1ram;
             Videocard2ram = src.Videocard2ram;
             Cpuspeed = src.Cpuspeed;

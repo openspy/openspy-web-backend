@@ -114,10 +114,11 @@ namespace CoreWeb.Controllers
                 if(user == null)
                 {
                     user = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
-                    if (user == null) throw new NoSuchUserException();
                 }
                 
             }
+
+            if (user == null) throw new NoSuchUserException();
 
 
             if(request.password.CompareTo(user.Password) != 0)

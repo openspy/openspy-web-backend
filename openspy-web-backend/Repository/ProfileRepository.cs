@@ -73,7 +73,7 @@ namespace CoreWeb.Repository
                 query = query.Where(b => b.Uniquenick.Contains(lookup.uniquenick_like));
             }
 
-            query = query.Where(b => b.Deleted == 0);
+            query = query.Where(b => b.Deleted == 0 && b.User.Deleted == false);
 
             if(is_wide)
             {

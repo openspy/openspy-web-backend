@@ -59,7 +59,6 @@ namespace CoreWeb.Models
         public int Userid { get; set; }
         public int Namespaceid { get; set; }
         public System.Int16 Deleted { get; set; }
-        public System.Int16 Admin { get; set; }
 
         //[JsonIgnoreAttribute]
         public User User { get; set; }

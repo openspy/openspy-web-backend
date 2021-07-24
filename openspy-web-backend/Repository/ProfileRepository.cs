@@ -39,39 +39,41 @@ namespace CoreWeb.Repository
             {
                 is_wide = false;
                 query = query.Where(b => b.Id == lookup.id.Value);
-            }
-
-            if (lookup.user != null)
-            {
-                var user = (await this.userRepository.Lookup(lookup.user)).FirstOrDefault();
-                if(user != null)
+            } else {
+                if (lookup.user != null)
                 {
-                    query = query.Where(b => b.Userid == user.Id);
+                    var user = (await this.userRepository.Lookup(lookup.user)).FirstOrDefault();
+                    if(user != null)
+                    {
+                        query = query.Where(b => b.Userid == user.Id);
+                        is_wide = false;
+                    }
+                }
+                if (lookup.namespaceid.HasValue)
+                {
+                    query = query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
+                }
+                if(lookup.namespaceids != null)
+                {
+                    query = query.Where(b => lookup.namespaceids.Contains(b.Namespaceid));
+                }
+                if (lookup.nick != null)
+                {
+                    query = query.Where(b => b.Nick == lookup.nick);
                     is_wide = false;
                 }
+                if (lookup.uniquenick != null)
+                {
+                    is_wide = false;
+                    query = query.Where(b => b.Uniquenick == lookup.uniquenick);
+                } else if(lookup.uniquenick_like != null)
+                {
+                    is_wide = false;
+                    query = query.Where(b => b.Uniquenick.Contains(lookup.uniquenick_like));
+                }
             }
-            if (lookup.namespaceid.HasValue)
-            {
-                query = query.Where(b => b.Namespaceid == lookup.namespaceid.Value);
-            }
-            if(lookup.namespaceids != null)
-            {
-                query = query.Where(b => lookup.namespaceids.Contains(b.Namespaceid));
-            }
-            if (lookup.nick != null)
-            {
-                query = query.Where(b => b.Nick == lookup.nick);
-                is_wide = false;
-            }
-            if (lookup.uniquenick != null)
-            {
-                is_wide = false;
-                query = query.Where(b => b.Uniquenick == lookup.uniquenick);
-            } else if(lookup.uniquenick_like != null)
-            {
-                is_wide = false;
-                query = query.Where(b => b.Uniquenick.Contains(lookup.uniquenick_like));
-            }
+
+
 
             query = query.Where(b => b.Deleted == 0 && b.User.Deleted == false);
 
@@ -102,7 +104,7 @@ namespace CoreWeb.Repository
             {
                 if (model.Namespaceid == 0 && model.Uniquenick.Length != 0)
                 {
-                    model.Uniquenick = "";
+                    model.Uniquenick = null;
                 }
             }
             model.User = null;
@@ -139,6 +141,7 @@ namespace CoreWeb.Repository
         }
         private bool CheckUniqueNickValid(string uniquenick, int namespaceid)
         {
+            if(namespaceid == 0) return true;
             if(namespaceid == NAMESPACEID_IGN)
             {
                 var allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.";

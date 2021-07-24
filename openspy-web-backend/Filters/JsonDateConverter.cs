@@ -22,7 +22,7 @@ namespace CoreWeb.Filters
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            if(reader.Value == null) return null;
+            if(reader.TokenType != JsonToken.StartObject) return null;
             var jobject = JObject.Load(reader);
             DateObject date = jobject.ToObject<DateObject>();
             return new DateTime(date.year, date.month, date.day);

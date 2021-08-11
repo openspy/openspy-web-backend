@@ -58,7 +58,7 @@ namespace CoreWeb.Repository
                 return results;
             } else if(lookup.Cdkey != null)
             {
-                var results = await keyMasterDb.CdKey.Where(b => b.Cdkey == lookup.Cdkey && b.Gameid == lookup.Gameid).ToListAsync();
+                var results = await keyMasterDb.CdKey.Where(b => (b.Cdkey == lookup.Cdkey || b.CdkeyHash == lookup.Cdkey) && b.Gameid == lookup.Gameid).ToListAsync();
                 return results;
             } else if(lookup.CdkeyHash != null)
             {
@@ -116,16 +116,50 @@ namespace CoreWeb.Repository
             return num_modified > 0;
 
         }
-        public async Task<Profile> LookupProfileFromCDKey(CdKeyLookup lookup)
+        public async Task<Profile> LookupProfileFromCDKey(CdKeyLookup cdKeylookup)
         {
-            var cdkeyResults = (await Lookup(lookup)).FirstOrDefault();
+            var cdkeyResults = (await Lookup(cdKeylookup)).FirstOrDefault();
             if (cdkeyResults == null) return null;
 
-            var profileResults = await keyMasterDb.ProfileCdKey.Where(b => b.Cdkeyid == cdkeyResults.Id).FirstOrDefaultAsync();
-            var profileLookup = new ProfileLookup();
+            var profileResults = await keyMasterDb.ProfileCdKey.Where(b => b.Cdkeyid == cdkeyResults.Id).ToListAsync();
+            if(profileResults == null || profileResults.Count == 0) throw new NoSuchUserException(); //client is out of luck, no profile found for cd key
 
-            profileLookup.id = profileResults.Profileid;
-            return (await profileRepository.Lookup(profileLookup)).FirstOrDefault();
+            //find first user id, this is the "owner" of the cdkey
+            var userProfileLookup = new ProfileLookup();
+            userProfileLookup.id = profileResults.First().Profileid;
+
+            var userProfile = (await profileRepository.Lookup(userProfileLookup)).FirstOrDefault();
+            if(userProfile == null) throw new NoSuchUserException();
+
+            if(cdKeylookup.profileLookup == null) {
+                var profile_cdkey_records = await keyMasterDb.ProfileCdKey.Where(b => b.Cdkeyid == cdkeyResults.Id).ToListAsync();
+                var firstProfileAssociationRecord = profile_cdkey_records.FirstOrDefault();
+                if(firstProfileAssociationRecord == null) throw new NoSuchUserException();
+
+                //return first profile
+                var profileLookup = new ProfileLookup();
+                profileLookup.id = firstProfileAssociationRecord.Profileid;
+                return (await profileRepository.Lookup(profileLookup)).FirstOrDefault();
+            } else {
+                //lock profile lookup to current user
+                cdKeylookup.profileLookup.user = new UserLookup();
+                cdKeylookup.profileLookup.user.id = userProfile.Userid;
+
+                Profile result = (await profileRepository.Lookup(cdKeylookup.profileLookup)).FirstOrDefault();
+
+                if(result != null)
+                    return result;
+
+                //create new profile for user
+                result = new Profile();
+                result.Userid = userProfile.Userid;
+                result.Nick = cdKeylookup.profileLookup.nick;
+                result.Uniquenick = cdKeylookup.profileLookup.uniquenick;
+                result.Namespaceid = cdKeylookup.profileLookup.namespaceid ?? 0;
+
+                return await profileRepository.Create(result);
+            }
+
         }
 
         public async Task<CdKey> LookupCDKeyFromProfile(CdKeyLookup lookup)

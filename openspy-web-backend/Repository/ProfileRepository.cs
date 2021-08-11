@@ -110,7 +110,9 @@ namespace CoreWeb.Repository
             model.User = null;
             var tracking = gameTrackerDb.ChangeTracker.QueryTrackingBehavior;
             gameTrackerDb.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-            if (await PerformUniqueNickChecks(model) && await PerformNickChecks(model))
+
+            var nickCheckProfileid = await PerformNickChecks(model);
+            if (await PerformUniqueNickChecks(model) && (!nickCheckProfileid.HasValue || nickCheckProfileid.Value == model.Id))
             {
                 gameTrackerDb.ChangeTracker.QueryTrackingBehavior = tracking;
                 var entry = gameTrackerDb.Update<Profile>(model);
@@ -133,8 +135,18 @@ namespace CoreWeb.Repository
                     await PerformUniqueNickChecks(model);
                 }
             }
-            await PerformNickChecks(model);
+            var tracking = gameTrackerDb.ChangeTracker.QueryTrackingBehavior;
+            gameTrackerDb.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+            var profileId  = await PerformNickChecks(model);
             model.User = null;
+            if(profileId.HasValue) {
+                model.Id = profileId.Value;
+                var result =  await Update(model);                
+                gameTrackerDb.ChangeTracker.QueryTrackingBehavior = tracking;
+                return result;
+            }
+            gameTrackerDb.ChangeTracker.QueryTrackingBehavior = tracking;
             var entry = gameTrackerDb.Add(model);
             var num_modified = await gameTrackerDb.SaveChangesAsync(true);
             return entry.Entity;
@@ -204,7 +216,7 @@ namespace CoreWeb.Repository
         }
 
         //CannotDeleteLastProfileException
-        private async Task<bool> PerformNickChecks(Profile value)
+        private async Task<int?> PerformNickChecks(Profile value)
         {
             var profileLookup = new ProfileLookup();
             profileLookup.nick = value.Nick;
@@ -219,15 +231,10 @@ namespace CoreWeb.Repository
             var profile = (await Lookup(profileLookup)).FirstOrDefault();
             if (profile == null)
             {
-                return true;
+                return null;
             }
 
-            if (value.Id == profile.Id)
-            {
-                return true;
-            }
-
-            throw new NickInUseException();
+            return profile.Id;
         }
         private async Task<bool> PerformUniqueNickChecks(Profile value)
         {

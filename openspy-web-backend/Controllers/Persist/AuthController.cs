@@ -164,6 +164,7 @@ namespace CoreWeb.Controllers.Persist
             cdKeyLookup.CdkeyHash = request.cdkey;
             if(request.gameLookup == null) throw new AuthInvalidCredentialsException();
             cdKeyLookup.Gameid = request.gameLookup.id;
+            cdKeyLookup.profileLookup = request.profileLookup;
             var profile = await cdkeyRepository.LookupProfileFromCDKey(cdKeyLookup);
             if(profile == null || request.profileLookup == null || profile.Nick.CompareTo(request.profileLookup.nick) != 0)
             {

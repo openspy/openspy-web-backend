@@ -92,6 +92,7 @@ namespace CoreWeb.Controllers
             if (request.userLookup != null)
             {
                 user = (await userRepository.Lookup(request.userLookup)).FirstOrDefault();
+                if (user == null) throw new NoSuchUserException();
                 if (request.profileLookup != null)
                 {
                     var userLookup = new UserLookup();

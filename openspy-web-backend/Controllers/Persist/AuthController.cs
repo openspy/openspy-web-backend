@@ -10,6 +10,7 @@ using CoreWeb.Exception;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreWeb.Controllers.Persist
 {
@@ -40,7 +41,8 @@ namespace CoreWeb.Controllers.Persist
         IRepository<Game, GameLookup> gameRepository;
         AuthSessionRepository sessionRepository;
         private CdKeyRepository cdkeyRepository;
-        public AuthController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IRepository<Session, SessionLookup> sessionRepository, IRepository<CdKey, CdKeyLookup> cdkeyRepository)
+        private IConfiguration configuration;
+        public AuthController(IRepository<User, UserLookup> userRepository, IRepository<Profile, ProfileLookup> profileRepository, IRepository<Game, GameLookup> gameRepository, IRepository<Session, SessionLookup> sessionRepository, IRepository<CdKey, CdKeyLookup> cdkeyRepository, IConfiguration configuration)
         {
 
             this.userRepository = userRepository;
@@ -48,6 +50,7 @@ namespace CoreWeb.Controllers.Persist
             this.gameRepository = gameRepository;
             this.sessionRepository = (AuthSessionRepository)sessionRepository;
             this.cdkeyRepository = (CdKeyRepository)cdkeyRepository;
+            this.configuration = configuration;
         }
         private string gs_sesskey(System.Int32 sesskey)
         {
@@ -160,42 +163,54 @@ namespace CoreWeb.Controllers.Persist
         public async Task<AuthResponse> CDKeyAuth([FromBody] AuthRequest request)
         {
             var response = new AuthResponse();
-            var cdKeyLookup = new CdKeyLookup();
-            cdKeyLookup.CdkeyHash = request.cdkey;
-            if(request.gameLookup == null) throw new AuthInvalidCredentialsException();
-            cdKeyLookup.Gameid = request.gameLookup.id;
-            cdKeyLookup.profileLookup = request.profileLookup;
-            var profile = await cdkeyRepository.LookupProfileFromCDKey(cdKeyLookup);
-            if(profile == null || request.profileLookup == null || profile.Nick.CompareTo(request.profileLookup.nick) != 0)
-            {
-                throw new AuthInvalidCredentialsException();
-            }
-            response.profile = profile;
-            var userLookup = new UserLookup();
-            userLookup.id = profile.Userid;
-            var user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
-            response.user = user;
-
-            var sesskey = gs_sesskey(request.session_key);
-
-            var cdkey = (await cdkeyRepository.Lookup(cdKeyLookup)).FirstOrDefault();
-            string challenge = cdkey.Cdkey + sesskey.ToString();
-            using (MD5 md5 = MD5.Create())
-            {
-                StringBuilder sBuilder = new StringBuilder();
-                byte[] data = md5.ComputeHash(Encoding.UTF8.GetBytes(challenge));
-                for (int i = 0; i < data.Length; i++)
+            try {
+                
+                var cdKeyLookup = new CdKeyLookup();
+                cdKeyLookup.CdkeyHash = request.cdkey;
+                if(request.gameLookup == null) throw new AuthInvalidCredentialsException();
+                cdKeyLookup.Gameid = request.gameLookup.id;
+                cdKeyLookup.profileLookup = request.profileLookup;
+                var profile = await cdkeyRepository.LookupProfileFromCDKey(cdKeyLookup);
+                if(profile == null || request.profileLookup == null || profile.Nick.CompareTo(request.profileLookup.nick) != 0)
                 {
-                    sBuilder.Append(data[i].ToString("x2"));
+                    throw new AuthInvalidCredentialsException();
                 }
-                challenge = sBuilder.ToString().ToLower();
+                response.profile = profile;
+                var userLookup = new UserLookup();
+                userLookup.id = profile.Userid;
+                var user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+                response.user = user;
+
+                var sesskey = gs_sesskey(request.session_key);
+
+                var cdkey = (await cdkeyRepository.Lookup(cdKeyLookup)).FirstOrDefault();
+                string challenge = cdkey.Cdkey + sesskey.ToString();
+                using (MD5 md5 = MD5.Create())
+                {
+                    StringBuilder sBuilder = new StringBuilder();
+                    byte[] data = md5.ComputeHash(Encoding.UTF8.GetBytes(challenge));
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        sBuilder.Append(data[i].ToString("x2"));
+                    }
+                    challenge = sBuilder.ToString().ToLower();
+                }
+
+                if (!challenge.Equals(request.client_response.ToLower()))
+                {
+                    throw new AuthInvalidCredentialsException();
+                }
+                return response;
+            } catch(AuthInvalidCredentialsException e) {
+                var profile = (await profileRepository.Lookup(new ProfileLookup {id = configuration.GetValue<int>("PersistCdKeyAuthFallbackProfile")})).FirstOrDefault();
+                response.profile = profile;
+                var userLookup = new UserLookup();
+                userLookup.id = profile.Userid;
+                var user = (await userRepository.Lookup(userLookup)).FirstOrDefault();
+                response.user = user;
+                return response;
             }
 
-            if (!challenge.Equals(request.client_response.ToLower()))
-            {
-                throw new AuthInvalidCredentialsException();
-            }
-            return response;
         }
         [HttpPost("ProfileFromCDKey")]
         public async Task<AuthResponse> ProfileFromCDKey([FromBody] AuthRequest request)

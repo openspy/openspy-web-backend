@@ -109,10 +109,11 @@ namespace CoreWeb
                 opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
+            .AddNewtonsoftJson()
             .AddJsonOptions(options =>
             {
-                options.SerializerSettings.MaxDepth = 3;
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                //options.SerializerSettings.MaxDepth = 3;
+                //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
             var builder = new ConfigurationBuilder()
@@ -166,19 +167,7 @@ namespace CoreWeb
             services.AddSingleton<PresencePreAuthProvider>(c => new PresencePreAuthProvider(Configuration.GetValue<string>("PresencePreAuthPrivateKey")));
 
 
-            // Register the Swagger generator, defining 1 or more Swagger documents
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new Info { Title = "OpenSpy API", Version = "v1" });
-                c.AddSecurityDefinition("Bearer", new ApiKeyScheme { In = "header", Description = "Please enter your API Key", Name = "APIKey", Type = "apiKey" });
-                c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>> { { "Bearer", Enumerable.Empty<string>() }});
-                c.CustomSchemaIds(x => x.FullName);
-
-                // Set the comments path for the Swagger JSON and UI.
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
-            });
+            services.AddSwaggerGen();
 
         }
 
@@ -194,19 +183,13 @@ namespace CoreWeb
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
-            // specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "OpenSpy API V1");
-            });
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.)
+            app.UseSwaggerUI();
 
             app.UseMvc(routes =>
             {
                 routes.MapRoute("v1", "/v1/{controller=Values}/{id?}");
             });
-
-            loggerFactory.AddConsole();
         }
     }
 }

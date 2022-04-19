@@ -109,11 +109,9 @@ namespace CoreWeb
                 opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
-            .AddNewtonsoftJson()
-            .AddJsonOptions(options =>
-            {
-                //options.SerializerSettings.MaxDepth = 3;
-                //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            .AddNewtonsoftJson(options => {
+                options.SerializerSettings.MaxDepth = 3;
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
             var builder = new ConfigurationBuilder()

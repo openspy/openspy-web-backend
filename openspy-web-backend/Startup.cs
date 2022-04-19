@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using CoreWeb.Database;
 using CoreWeb.Models;
 using CoreWeb.Models.EA;
@@ -106,6 +108,7 @@ namespace CoreWeb
 
             services.AddMvc(opt =>
             {
+                opt.EnableEndpointRouting = false;
                 opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
@@ -165,7 +168,42 @@ namespace CoreWeb
             services.AddSingleton<PresencePreAuthProvider>(c => new PresencePreAuthProvider(Configuration.GetValue<string>("PresencePreAuthPrivateKey")));
 
 
-            services.AddSwaggerGen();
+            services.AddSwaggerGenNewtonsoftSupport();
+            services.AddSwaggerGen(c => {
+                
+                c.CustomSchemaIds( type => type.FullName );
+
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "THPS API", Version = "v1" });
+
+                c.AddSecurityDefinition("ApiKeyAuth", new OpenApiSecurityScheme
+                {
+                    Name = "APIKey",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "ApiKeyAuth",
+                    In = ParameterLocation.Header,
+                    Description = "APIKey header."
+                });
+
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "ApiKeyAuth"
+                                },
+                                Scheme = "ApiKeyAuth",
+                                Name = "APIKey",
+                                In = ParameterLocation.Header,
+
+                            },
+                            new List<string>()
+                        }
+                    });
+            });
 
         }
 
@@ -182,7 +220,9 @@ namespace CoreWeb
             app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.)
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(c => {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "API");
+            });
 
             app.UseMvc(routes =>
             {

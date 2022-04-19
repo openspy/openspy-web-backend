@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-      <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,13 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.17" />
     <PackageReference Include="MongoDB.Driver" Version="2.15.0" />
     <PackageReference Include="MySql.Data.EntityFrameworkCore" Version="8.0.22" />
     <PackageReference Include="RabbitMQ.Client" Version="6.2.4" />
     <PackageReference Include="StackExchange.Redis" Version="2.5.61" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.3.0" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 ls /sql
-echo $MYSQL_PASSWORD
-echo $MYSQL_HOST
+echo "pass " $MYSQL_PASSWORD
+echo "host" $MYSQL_HOST
 sleep 10
 mysql -u $MYSQL_USER --password=$MYSQL_PASSWORD -h $MYSQL_HOST -e 'create database Gamemaster;'
 mysql -u $MYSQL_USER --password=$MYSQL_PASSWORD -h $MYSQL_HOST --database=Gamemaster < /sql/Gamemaster.sql

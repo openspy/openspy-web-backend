@@ -3,7 +3,7 @@ WORKDIR /app
 COPY openspy-web-backend openspy-web-backend
 COPY openspy-web-backend.sln .
 RUN dotnet restore
-RUN dotnet publish -c Release -o ../out
+RUN dotnet publish -c Release -o /app/out
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app

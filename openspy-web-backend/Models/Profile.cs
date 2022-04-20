@@ -58,7 +58,7 @@ namespace CoreWeb.Models
         public int? Pic { get; set; }
         public int Userid { get; set; }
         public int Namespaceid { get; set; }
-        public System.Int16 Deleted { get; set; }
+        public bool Deleted { get; set; }
 
         //[JsonIgnoreAttribute]
         public User User { get; set; }

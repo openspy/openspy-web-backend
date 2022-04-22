@@ -96,6 +96,8 @@ namespace CoreWeb.Repository
                     var usermode = LookupTemporaryUsermode(id);
                     if(usermode != null && TestUsermodeMatches(lookup, usermode)) {
                         result.Add(usermode);
+                    } else if(usermode == null) {
+                        db.SortedSetRemove("usermodes", entry.Element);
                     }
                 }
 

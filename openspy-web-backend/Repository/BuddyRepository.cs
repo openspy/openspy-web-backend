@@ -45,12 +45,14 @@ namespace CoreWeb.Repository
                 {
                     ProfileLookup plookup = new ProfileLookup();
                     plookup.id = buddy.ToProfileid;
-                    buddy.ToProfile = (await this.profileRepository.Lookup(plookup)).First();
+                    buddy.ToProfile = (await this.profileRepository.Lookup(plookup)).FirstOrDefault();
                 }
             }
             if(lookup.TargetProfile != null) {
-                var to_profile = (await this.profileRepository.Lookup(lookup.TargetProfile)).First();
-                return buddies.Where(b => b.ToProfileid == to_profile.Id);
+                var to_profile = (await this.profileRepository.Lookup(lookup.TargetProfile)).FirstOrDefault();
+                if(to_profile != null) {
+                    return buddies.Where(b => b.ToProfileid == to_profile.Id);
+                }                
             }
             return buddies;
         }

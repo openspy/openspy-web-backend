@@ -501,6 +501,7 @@ namespace CoreWeb.Repository
             var lookup = new UsermodeLookup();
             lookup.channelmask = channelUserSummary.ChannelName;
             lookup.hostmask = channelUserSummary.UserSummary.Hostname;
+            lookup.machineid = channelUserSummary.UserSummary.Realname;
             lookup.profileid = channelUserSummary.UserSummary.Profileid;
             lookup.gameid = channelUserSummary.UserSummary.Gameid;
 

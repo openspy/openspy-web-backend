@@ -83,6 +83,10 @@ namespace CoreWeb.Repository
                 db.HashSet(group_key, "maxwaiting", group.Maxwaiting.ToString());
                 db.HashSet(group_key, "hostname", group.Name.ToString());
 
+
+                //add to sorted set (used for faster scanning by MS)
+                db.SortedSetAdd(game.Gamename, group_key, 1);
+
                 var custkey_name = group_key + "custkeys";
 
                 if (group.Other == null || group.Other.Length == 0) continue;

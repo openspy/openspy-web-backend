@@ -41,33 +41,38 @@ namespace CoreWeb.Repository
             this.peerChatCacheDb = peerChatCacheDb;
             this.connectionFactory = connectionFactory;
         }
-        private UsermodeRecord LookupTemporaryUsermode(int usermodeId) {
+        private UsermodeRecord LookupTemporaryUsermode(IDatabase db, int usermodeId) {
             UsermodeRecord result = new UsermodeRecord();
             var key = "USERMODE_" + usermodeId;
-            var db = peerChatCacheDb.GetDatabase();
             if(!db.KeyExists(key))
                 return null;
             result.Id = usermodeId;
-            result.channelmask = db.HashGet(key, "chanmask");
-            result.hostmask = db.HashGet(key, "hostmask");
-            result.comment = db.HashGet(key, "comment");
-            result.machineid = db.HashGet(key, "machineid");
-            if(int.TryParse(db.HashGet(key, "modeflags"), out int modeflags)) {
+
+            RedisValue[] values = {
+                "chanmask", "hostmask", "comment", "machineid", "modeflags", "setByNick", "setByHost", "setByPid", "profileid", "setAt", "expiresAt"
+            };
+            var redisValues = db.HashGet(key, values);
+            
+            result.channelmask = redisValues[0];
+            result.hostmask = redisValues[1];
+            result.comment = redisValues[2];
+            result.machineid = redisValues[3];
+            if(int.TryParse(redisValues[4], out int modeflags)) {
                 result.modeflags = modeflags;
             } else {
                 result.modeflags = 0;
             }
             
             result.isGlobal = usermodeId > 0;
-            result.setByNick = db.HashGet(key, "setByNick");
-            result.setByHost = db.HashGet(key, "setByHost");
+            result.setByNick = redisValues[5];
+            result.setByHost = redisValues[6];
 
-            if(int.TryParse(db.HashGet(key, "setByPid"), out int setByPid)) {
+            if(int.TryParse(redisValues[7], out int setByPid)) {
                 result.setByPid = setByPid;
             }
             
 
-            if(int.TryParse(db.HashGet(key, "profileid"), out int profileid)) {
+            if(int.TryParse(redisValues[8], out int profileid)) {
                 if(profileid == 0) 
                     result.profileid = null;
                 else 
@@ -75,10 +80,9 @@ namespace CoreWeb.Repository
             }
             
             var Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            result.setAt = Epoch.AddSeconds(int.Parse(db.HashGet(key, "setAt")));
+            result.setAt = Epoch.AddSeconds(int.Parse(redisValues[9]));
 
-            result.expiresAt = Epoch.AddSeconds(int.Parse(db.HashGet(key, "expiresAt")));
-            
+            result.expiresAt = Epoch.AddSeconds(int.Parse(redisValues[10]));
             return result;
         }
         private IEnumerable<UsermodeRecord> LookupCachedUsermodes(UsermodeLookup lookup) {
@@ -93,7 +97,7 @@ namespace CoreWeb.Repository
                 {
                     int id = int.Parse(entry.Element.ToString());
                     if(id > 0) continue;
-                    var usermode = LookupTemporaryUsermode(id);
+                    var usermode = LookupTemporaryUsermode(db, id);
                     if(usermode != null && TestUsermodeMatches(lookup, usermode)) {
                         result.Add(usermode);
                     } else if(usermode == null) {
@@ -111,6 +115,9 @@ namespace CoreWeb.Repository
                 if(usermode.profileid != lookup.profileid)
                     return false;
             }
+            if(!string.IsNullOrEmpty(usermode.channelmask) && !string.IsNullOrEmpty(lookup.channelmask)) {
+                return IRCMatch.match(usermode.channelmask, lookup.channelmask) == 0 || lookup.channelmask.Equals(usermode.channelmask);
+            }
             if(!string.IsNullOrEmpty(usermode.hostmask) && !string.IsNullOrEmpty(lookup.hostmask)) {
                 return IRCMatch.match(usermode.hostmask, lookup.hostmask) == 0;
             }
@@ -121,10 +128,11 @@ namespace CoreWeb.Repository
         }
         public async Task<IEnumerable<UsermodeRecord>> Lookup(UsermodeLookup lookup)
         {
+            var db = peerChatCacheDb.GetDatabase();
             List<UsermodeRecord> result, cachedResult = null;
             if((lookup.Id.HasValue && lookup.Id < 0)) {
                 result = new List<UsermodeRecord>();
-                var item = LookupTemporaryUsermode(lookup.Id.Value);
+                var item = LookupTemporaryUsermode(db, lookup.Id.Value);
                 if(item == null)
                     return result;
                 result.Add(item);

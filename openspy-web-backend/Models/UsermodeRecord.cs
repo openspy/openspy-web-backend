@@ -24,7 +24,7 @@ namespace CoreWeb.Models
         public string comment { get; set; }
         public string machineid { get; set; }
         public int? profileid { get; set; }
-        public int modeflags { get; set; }
+        public int? modeflags { get; set; }
         [JsonConverter(typeof(JsonTimeSpanConverter))]
         public TimeSpan? expiresIn
         {
@@ -42,7 +42,7 @@ namespace CoreWeb.Models
 
         public string setByNick { get; set; }
         public string setByHost { get; set; }
-        public int setByPid { get; set; }
+        public int? setByPid { get; set; }
         [JsonConverter(typeof(JsonDateTimeConverter))]
         public DateTime setAt { get; set; } = DateTime.UtcNow;
         public bool isGlobal {get; set;}

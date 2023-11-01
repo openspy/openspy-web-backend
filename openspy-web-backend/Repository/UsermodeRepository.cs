@@ -413,7 +413,8 @@ namespace CoreWeb.Repository
             var redisValue = db.HashGet(channel_key, "modeflags");
             int currentModeflags = int.Parse(redisValue.ToString());
 
-            int newModeflags = usermode.modeflags | (int)EUserChannelFlag.EUserChannelFlag_IsInChannel;
+            int modeflags = usermode.modeflags.HasValue ? usermode.modeflags.Value : 0;
+            int newModeflags = modeflags | (int)EUserChannelFlag.EUserChannelFlag_IsInChannel;
             string removeString = "";
             string addString = "";
 

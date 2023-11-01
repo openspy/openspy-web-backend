@@ -173,7 +173,7 @@ namespace CoreWeb
                 
                 c.CustomSchemaIds( type => type.FullName );
 
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "THPS API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "OpenSpy API", Version = "v1" });
 
                 c.AddSecurityDefinition("ApiKeyAuth", new OpenApiSecurityScheme
                 {

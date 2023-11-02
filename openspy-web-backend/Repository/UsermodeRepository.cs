@@ -32,6 +32,8 @@ namespace CoreWeb.Repository
         private String PEERCHAT_EXCHANGE;
         private String PEERCAHT_CLIENT_MESSAGE_KEY;
         private String PEERCHAT_KEYUPDATE_KEY;
+
+        private int PEERCHAT_USERMODE_EXPIRE_TIME = 300;
         public UsermodeRepository(PeerchatDBContext peerChatDb, PeerchatCacheDatabase peerChatCacheDb, IMQConnectionFactory connectionFactory)
         {
             PEERCHAT_EXCHANGE = "peerchat.core";
@@ -320,6 +322,8 @@ namespace CoreWeb.Repository
             }
 
             db.SortedSetIncrement("usermodes", id, 1);
+
+            db.KeyExpire(redis_Key, TimeSpan.FromSeconds(PEERCHAT_USERMODE_EXPIRE_TIME));
             return (int)id;
         }
         private async Task ApplyUserrecords(UsermodeRecord model)

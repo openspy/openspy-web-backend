@@ -365,7 +365,8 @@ namespace CoreWeb.Repository
             await db.HashSetAsync(key, "entrymsg", record.entrymsg);            
 
             if(!string.IsNullOrEmpty(record.groupname)) {
-                await db.HashSetAsync(key, "custkey_groupname", record.groupname);
+                var custkeys_key = key + "_custkeys";
+                await db.HashSetAsync(custkeys_key, "groupname", record.groupname);
             }
         }
         private async Task ResyncChanPropsForChanMask(string channel_mask, bool kickExisting) {
@@ -429,6 +430,7 @@ namespace CoreWeb.Repository
             db.KeyDelete(channel_prefix);
             db.KeyDelete(channel_prefix + "_users");
             db.HashDelete("channels", channel_id.ToString());
+            db.KeyDelete("channelname_" + channel_id);
         }
     }
 }

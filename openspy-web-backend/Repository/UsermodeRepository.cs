@@ -521,6 +521,7 @@ namespace CoreWeb.Repository
             var record = new UsermodeRecord();
             record.channelmask = channelUserSummary.ChannelName;
             record.expiresAt = DateTime.MaxValue;
+            record.modeflags = 0;
 
             var usermodes = (await Lookup(lookup)).ToList();
             foreach(var usermode in usermodes)

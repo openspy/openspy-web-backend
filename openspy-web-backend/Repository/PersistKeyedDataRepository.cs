@@ -48,8 +48,12 @@ namespace CoreWeb.Repository
             var profile = (await profileRepository.Lookup(lookup.profileLookup)).FirstOrDefault();
             var query = gameTrackerDb.PersistKeyedData as IQueryable<PersistKeyedData>;
 
-            query = query.Where(s => s.Profileid == profile.Id && s.Gameid == game.Id && lookup.keys.Contains(s.KeyName) && s.DataIndex == lookup.dataIndex && s.PersistType == lookup.persistType);
-
+            if (lookup.keys != null && lookup.keys.Count > 0) {
+                query = query.Where(s => s.Profileid == profile.Id && s.Gameid == game.Id && lookup.keys.Contains(s.KeyName) && s.DataIndex == lookup.dataIndex && s.PersistType == lookup.persistType);
+            } else {
+                query = query.Where(s => s.Profileid == profile.Id && s.Gameid == game.Id && s.DataIndex == lookup.dataIndex && s.PersistType == lookup.persistType);
+            }
+            
             if(lookup.modifiedSince.HasValue) {
                 query = query.Where(s => s.Modified >= lookup.modifiedSince.Value);
             }

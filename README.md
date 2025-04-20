@@ -1,6 +1,6 @@
 # Openspy Web Backend
 
-This is a .NET Core 3.1 project to perform various functions needed by the openspy core, or things which integrate with openspy.
+This is a .NET 8 project to perform various functions needed by the openspy core, or things which integrate with openspy.
 
 This project should be rearchitected at some point as its roles and responsibilities are wide reaching.
 

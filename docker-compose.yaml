@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   mysql:
-      image: mysql:5.7
+      image: mysql
       restart: always
       environment:
         MYSQL_DATABASE: 'db'
@@ -27,12 +27,15 @@ services:
         MYSQL_PASSWORD: 'password'
         MYSQL_HOST: 'mysql'
         HTTP_API_URL: 'core-web:8080'
+        RABBITMQ_HOST: "rabbit"
         RABBITMQ_DEFAULT_USER: "rabbitmq"
         RABBITMQ_DEFAULT_PASS: "rabbitmq"
         RABBITMQ_DEFAULT_VHOST: "/"
-        HTTP_API_KEY: "C1yhtcHTovJYeNTs5uAiTVyQLchziWceS0kpZHe/A6awb2Wdr4dQgeTjPykhFmhGBHdM5VXH3qQXus40s/yxbDpNXyEP3taAey2h2+rZtK6DNsPzIsFeCx906sQmz3ackqsdpwr77/0kqmD06R88ZojQc9rBk0YpFskwd8u57UG5vTw/IHluvNzSnbxqSs4MCmihpqNef3O4st/O+LTroqjgzHHeP/fklnNXgK7RSVXmgjsDxOp0EOBWdoLEambm/BGamM9kHR/JUWcjNIHimqy9oR6zauvVZ3LgRlh43wKDdzIA7ARRcFFJ3oggmkraGaKy/9InCpj+YgQXHoEADA=="
-      links:
-        - mysql
+        HTTP_API_KEY: "GDuBqPLVPio/G6x43dG2nHUCOq29IWOxO8SiqRsnZp/S7HiWj+f0Q3wfgsgLZjuW7zjR11xjUNp3Bwwxo+OhQg98Uegu2PJI5/8zuiq3+kGhiy/y0W5T/VWJqYIHBIkS3DgiWhmD8ce9u69kzXhXdSrGol8KVmXF7712W949tJmzvQKQ77kAzu71eboqfztE8NMQGZ9VVsVyFiy76ujj1ah8uRkF+zpAilLQJjV56kLvRtLxqWF078B3Nh9MfckplT1+2i25ZZhRB//qIwxTTYZGq/UvYIrV+Snp/wkOcyIyTvXArkE2Jw3B8mhYIEGGv0sxaUwQvcPEa5v4Vlr8PQ=="
+      # links:
+      #   - mysql
+      #   - rabbit
+      #   - core-web
       volumes:
         - "./sql:/sql"
   redis:
@@ -51,9 +54,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: OpenSpy
       MONGO_INITDB_ROOT_PASSWORD: OpenSpy123
 
-  rabbit1:
+  rabbit:
     image: "rabbitmq:3-management"
-    hostname: "rabbit1"
+    hostname: "rabbit"
     environment:
       RABBITMQ_ERLANG_COOKIE: "LXTXGOZZDFGDBWNGILHM"
       RABBITMQ_DEFAULT_USER: "rabbitmq"
@@ -67,7 +70,7 @@ services:
     volumes:
       - "./docker-compose-support/enabled_plugins:/etc/rabbitmq/enabled_plugins"
   core-web:
-    image: "os-core-web"
+    image: "chcniz/openspy-web-backend"
     hostname: "core-web"
     ports:
       - "8080:8080"
@@ -83,6 +86,7 @@ services:
       PresencePreAuthPrivateKey: "MIIBOgIBAAJBAO1aRNQrw2iKAKiKwvu1lDZUpklFmqg2V8RgD3nK8a0kJSIYkJ7XeZt46pp9WSUV4ZekxVc2ogIS9VNZ8fpZMFMCAwEAAQJAcASUS1ZEKQhIe0LR9x2hT2rv99DDxvOuxF1ZsG9ZVA68U0hdLZuApqWNiLADW5dUoniyCzpOpObsgYHCuozREQIhAPaO9rfb/NrM9tQ+gLRW1DLcBLADfSCTz41KOORQV029AiEA9nEPNCMB90RzQP/JoB/TmZAHZ/I89UMcpJn0G9CUr08CIHVmoafugjoVOrrZgCNe7O/CwCCnqJ8ogr2+R9S/RLLpAiBCtlZkSbnFgw0kIlolc5gncNrgY63mwvUlBdwUD4HAdwIhANlbalfPp3NAkjTKaoRTR7CFp9a5y2+f1FkySKB1AcB1"
       ASPNETCORE_ENVIRONMENT: "development"
       ASPNETCORE_URLS: "http://0.0.0.0:8080"
+      
 
 volumes:
   mysqldb-data:

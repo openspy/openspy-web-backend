@@ -1,6 +1,3 @@
-ls /sql
-echo "pass " $MYSQL_PASSWORD
-echo "host" $MYSQL_HOST
 sleep 10
 mysql -u $MYSQL_USER --password=$MYSQL_PASSWORD -h $MYSQL_HOST -e 'create database Gamemaster;'
 mysql -u $MYSQL_USER --password=$MYSQL_PASSWORD -h $MYSQL_HOST --database=Gamemaster < /sql/Gamemaster.sql
@@ -22,6 +19,7 @@ python3 /sql/rabbitmqadmin declare exchange -H $RABBITMQ_HOST --user=$RABBITMQ_D
 python3 /sql/rabbitmqadmin declare exchange -H $RABBITMQ_HOST --user=$RABBITMQ_DEFAULT_USER --password=$RABBITMQ_DEFAULT_PASS --vhost=$RABBITMQ_DEFAULT_VHOST name=openspy.natneg type=topic durable=true
 python3 /sql/rabbitmqadmin declare exchange -H $RABBITMQ_HOST --user=$RABBITMQ_DEFAULT_USER --password=$RABBITMQ_DEFAULT_PASS --vhost=$RABBITMQ_DEFAULT_VHOST name=openspy.gamestats type=topic durable=true
 python3 /sql/rabbitmqadmin declare exchange -H $RABBITMQ_HOST --user=$RABBITMQ_DEFAULT_USER --password=$RABBITMQ_DEFAULT_PASS --vhost=$RABBITMQ_DEFAULT_VHOST name=presence.core type=topic durable=true
+python3 /sql/rabbitmqadmin declare exchange -H $RABBITMQ_HOST --user=$RABBITMQ_DEFAULT_USER --password=$RABBITMQ_DEFAULT_PASS --vhost=$RABBITMQ_DEFAULT_VHOST name=peerchat.core type=topic durable=true
 
 
 curl -v -X POST "http://$HTTP_API_URL/v1/Game/SyncToRedis" -H  "accept: application/json" -H  "APIKey: $HTTP_API_KEY"

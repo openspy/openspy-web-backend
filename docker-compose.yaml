@@ -72,6 +72,12 @@ services:
   core-web:
     image: "chcniz/openspy-web-backend"
     hostname: "core-web"
+    restart: on-failure
+    depends_on:
+      - rabbit
+      - mongo
+      - redis
+      - mysql
     ports:
       - "8080:8080"
     environment:

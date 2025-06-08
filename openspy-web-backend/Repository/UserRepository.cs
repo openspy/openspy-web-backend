@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using CoreWeb.Database;
 using CoreWeb.Models;
+using SendGrid;
+using SendGrid.Helpers.Mail;
+using CoreWeb.Services;
 
 namespace CoreWeb.Repository
 {
@@ -16,10 +19,12 @@ namespace CoreWeb.Repository
         private readonly int PARTNERID_EA = 20;
         private GameTrackerDBContext gameTrackerDb;
         private SessionCacheDatabase sessionCache;
-        public UserRepository(GameTrackerDBContext gameTrackerDb, SessionCacheDatabase sessionCache)
+        private EmailService emailService;
+        public UserRepository(GameTrackerDBContext gameTrackerDb, SessionCacheDatabase sessionCache, EmailService emailService)
         {
             this.gameTrackerDb = gameTrackerDb;
             this.sessionCache = sessionCache;
+            this.emailService = emailService;
         }
         public async Task<IEnumerable<User>> Lookup(UserLookup lookup)
         {
@@ -90,6 +95,10 @@ namespace CoreWeb.Repository
             return entry.Entity;
         }
         public async Task<bool> SendEmailVerification(User model) {
+            if (model.EmailVerified)
+            {
+                return false;
+            }
             var verify_key = Guid.NewGuid().ToString();
             var store_key = "verify_" + model.Id;
             var db = sessionCache.GetDatabase();
@@ -97,10 +106,7 @@ namespace CoreWeb.Repository
             var result = db.StringSet(store_key, verify_key);
             db.KeyExpire(store_key, TimeSpan.FromHours(6));
 
-            model.EmailVerified = false;
-            var entry = gameTrackerDb.Update<User>(model);
-            await gameTrackerDb.SaveChangesAsync();
-            return true;    
+            return await emailService.SendEmailVerification(model, verify_key);
         }
         public async Task<bool> PerformEmailVerification(User model, string verification_key) {
             var store_key = "verify_" + model.Id;
@@ -124,10 +130,7 @@ namespace CoreWeb.Repository
             var result = db.StringSet(store_key, verify_key);            
             db.KeyExpire(store_key, TimeSpan.FromHours(6));
 
-            model.EmailVerified = false;
-            var entry = gameTrackerDb.Update<User>(model);
-            await gameTrackerDb.SaveChangesAsync();
-            return true;    
+            return await emailService.SendPasswordReset(model, verify_key);
         }
         public async Task<bool> PerformPasswordReset(User model, string verification_key, string password) {
             var store_key = "reset_" + model.Id;
@@ -136,6 +139,7 @@ namespace CoreWeb.Repository
             if(!db.KeyExists(store_key)) return false;
             if(result.CompareTo(verification_key) == 0) {
                 model.Password = password;
+                model.EmailVerified = true; //if they did this then they also verified their email
                 var entry = gameTrackerDb.Update<User>(model);
                 await gameTrackerDb.SaveChangesAsync();
                 db.KeyDelete(store_key);

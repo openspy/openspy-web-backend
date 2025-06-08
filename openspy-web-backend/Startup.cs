@@ -23,6 +23,8 @@ using System.Reflection;
 using System.IO;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using SendGrid;
+using CoreWeb.Services;
 
 namespace CoreWeb
 {
@@ -166,6 +168,9 @@ namespace CoreWeb
             services.AddSingleton<APIKeyProvider>(c => new APIKeyProvider(Configuration.GetValue<string>("APIKeyPrivateKey")));
             //weak RSA provider... 256 bit key length... due to GP max ticket length = 255 bytes...
             services.AddSingleton<PresencePreAuthProvider>(c => new PresencePreAuthProvider(Configuration.GetValue<string>("PresencePreAuthPrivateKey")));
+
+            services.AddSingleton<ISendGridClient>(c => new SendGridClient(Configuration.GetValue<string>("SendGrid:Key")));
+            services.AddScoped<EmailService>();
 
 
             services.AddSwaggerGenNewtonsoftSupport();

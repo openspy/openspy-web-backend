@@ -82,6 +82,11 @@ namespace CoreWeb.Repository
             userLookup.id = model.Id;
             User userModel = (await Lookup(userLookup)).FirstOrDefault();
 
+            if (model.Email.CompareTo(userModel.Email) != 0)
+            {
+                model.EmailVerified = false;
+            }
+
             userModel.Copy(model);
 
             var entry = gameTrackerDb.Update<User>(userModel);

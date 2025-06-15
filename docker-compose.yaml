@@ -92,7 +92,11 @@ services:
       PresencePreAuthPrivateKey: "MIIBOgIBAAJBAO1aRNQrw2iKAKiKwvu1lDZUpklFmqg2V8RgD3nK8a0kJSIYkJ7XeZt46pp9WSUV4ZekxVc2ogIS9VNZ8fpZMFMCAwEAAQJAcASUS1ZEKQhIe0LR9x2hT2rv99DDxvOuxF1ZsG9ZVA68U0hdLZuApqWNiLADW5dUoniyCzpOpObsgYHCuozREQIhAPaO9rfb/NrM9tQ+gLRW1DLcBLADfSCTz41KOORQV029AiEA9nEPNCMB90RzQP/JoB/TmZAHZ/I89UMcpJn0G9CUr08CIHVmoafugjoVOrrZgCNe7O/CwCCnqJ8ogr2+R9S/RLLpAiBCtlZkSbnFgw0kIlolc5gncNrgY63mwvUlBdwUD4HAdwIhANlbalfPp3NAkjTKaoRTR7CFp9a5y2+f1FkySKB1AcB1"
       ASPNETCORE_ENVIRONMENT: "development"
       ASPNETCORE_URLS: "http://0.0.0.0:8080"
-      
+      SendGrid__Key: sendgridkey_here
+      SendGrid__EmailVerifyTemplate: sendgridtemplate_here
+      SendGrid__PasswordResetTemplat: sendgridtemplate_here
+      SendGrid__FromAddress: noreply@openspy.net
+      SendGrid__FromName: OpenSpy
 
 volumes:
   mysqldb-data:

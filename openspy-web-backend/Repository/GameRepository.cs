@@ -25,7 +25,7 @@ namespace CoreWeb.Repository
                 return results;
             } else if(lookup.gamename != null)
             {
-                var results = await gameMasterDb.Game.Where(b => b.Gamename == lookup.gamename).ToListAsync();
+                var results = await gameMasterDb.Game.Where(b => b.Gamename.ToLower() == lookup.gamename.ToLower()).ToListAsync();
                 return results;
             } else
             {
@@ -74,15 +74,16 @@ namespace CoreWeb.Repository
 
                 foreach (var game in games)
                 {
-                    var game_key = game.Gamename + ":" + game.Id.ToString();
+                    var gamename = game.Gamename.ToLower();
+                    var game_key = gamename + ":" + game.Id.ToString();
                     db.HashSet(game_key, "gameid", game.Id.ToString());
                     db.HashSet(game_key, "description", game.Description);
-                    db.HashSet(game_key, "gamename", game.Gamename);
+                    db.HashSet(game_key, "gamename", gamename);
                     db.HashSet(game_key, "secretkey", game.Secretkey);
                     db.HashSet(game_key, "queryport", game.Queryport.ToString());
                     db.HashSet(game_key, "disabledservices", game.Disabledservices.ToString());
                     db.HashSet(game_key, "backendflags", game.Backendflags.ToString());
-                    db.StringSet(game.Gamename, game_key);
+                    db.StringSet(gamename, game_key);
                     db.StringSet("gameid_" + game.Id.ToString(), game_key);
                 }
             });

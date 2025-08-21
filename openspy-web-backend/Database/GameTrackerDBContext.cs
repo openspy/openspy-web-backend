@@ -15,24 +15,9 @@ namespace CoreWeb.Database
         public virtual DbSet<Buddy> Buddy { get; set; }
         public virtual DbSet<PersistData> PersistData { get; set; }
         public virtual DbSet<PersistKeyedData> PersistKeyedData { get; set; }
-
-        private IConfiguration configuration;
-
-        public GameTrackerDBContext(IConfiguration configuration)
+        public GameTrackerDBContext(DbContextOptions<GameTrackerDBContext> options) : base(options)
         {
-            this.configuration = configuration;
-        }
-
-        /*public static readonly Microsoft.Extensions.Logging.LoggerFactory _myLoggerFactory =
-            new LoggerFactory(new[] {
-            new Microsoft.Extensions.Logging.Debug.DebugLoggerProvider()
-        });*/
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseMySQL(configuration.GetConnectionString("GameTrackerDB"));
-            /*optionsBuilder.EnableSensitiveDataLogging(true);
-            optionsBuilder.UseLoggerFactory(_myLoggerFactory);*/
+            
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

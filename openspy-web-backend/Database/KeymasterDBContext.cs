@@ -11,16 +11,9 @@ namespace CoreWeb.Database
         public virtual DbSet<CdKey> CdKey { get; set; }
         public virtual DbSet<ProfileCdKey> ProfileCdKey { get; set; }
         public virtual DbSet<CdkeyRule> CdKeyRules { get; set; }
-        private IConfiguration configuration;
-
-        public KeymasterDBContext(IConfiguration configuration)
+        public KeymasterDBContext(DbContextOptions<KeymasterDBContext> options) : base(options)
         {
-            this.configuration = configuration;
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-               optionsBuilder.UseMySQL(configuration.GetConnectionString("KeymasterDB"));
+            
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

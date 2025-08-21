@@ -10,19 +10,11 @@ namespace CoreWeb.Database
     {
         public virtual DbSet<Game> Game { get; set; }
         public virtual DbSet<Group> Group { get; set; }
-
-        private IConfiguration configuration;
-
-        public GamemasterDBContext(IConfiguration configuration)
+        public GamemasterDBContext(DbContextOptions<GamemasterDBContext> options) : base(options)
         {
-            this.configuration = configuration;
+            
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-               #warning To protect potentially sensitive information in your connection string, you should move it out of source code.See http://go.microsoft.com/fwlink/?LinkId=723263  for guidance on storing connection strings.
-               optionsBuilder.UseMySQL(configuration.GetConnectionString("GamemasterDB"));
-        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Game>(entity =>

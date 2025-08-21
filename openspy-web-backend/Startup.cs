@@ -25,6 +25,7 @@ using StackExchange.Redis;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using SendGrid;
 using CoreWeb.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoreWeb
 {
@@ -126,10 +127,11 @@ namespace CoreWeb
             Configuration = builder.Build();
             services.AddSingleton<IConfiguration>(Configuration);
 
-            services.AddDbContext<GameTrackerDBContext>();
-            services.AddDbContext<GamemasterDBContext>();
-            services.AddDbContext<KeymasterDBContext>();
-            services.AddDbContext<PeerchatDBContext>();
+            var dbPoolSize = Configuration.GetValue<int>("DBPoolSize", 1024);
+            services.AddDbContextPool<GameTrackerDBContext>(o => o.UseMySQL(Configuration.GetConnectionString("GameTrackerDB")), dbPoolSize);
+            services.AddDbContextPool<GamemasterDBContext>(o => o.UseMySQL(Configuration.GetConnectionString("GamemasterDB")), dbPoolSize);
+            services.AddDbContextPool<KeymasterDBContext>(o => o.UseMySQL(Configuration.GetConnectionString("KeymasterDB")), dbPoolSize);
+            services.AddDbContextPool<PeerchatDBContext>(o => o.UseMySQL(Configuration.GetConnectionString("PeerchatDB")), dbPoolSize);
 
 
             var multiplexer = ConnectionMultiplexer.Connect(Configuration.GetConnectionString("redisCache"));

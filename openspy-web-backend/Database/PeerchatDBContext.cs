@@ -11,17 +11,9 @@ namespace CoreWeb.Database
         public virtual DbSet<UsermodeRecord> Usermode { get; set; }
         public virtual DbSet<ChanpropsRecord> Chanprops { get; set; }
         public virtual DbSet<GlobalOpersRecord> GlobalOpers { get; set; }
-
-        private IConfiguration configuration;
-
-        public PeerchatDBContext(IConfiguration configuration)
+        public PeerchatDBContext(DbContextOptions<PeerchatDBContext> options) : base(options)
         {
-            this.configuration = configuration;
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-               optionsBuilder.UseMySQL(configuration.GetConnectionString("PeerchatDB"));
+            
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

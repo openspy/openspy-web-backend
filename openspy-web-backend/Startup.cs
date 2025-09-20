@@ -17,7 +17,6 @@ using CoreWeb.Models;
 using CoreWeb.Models.EA;
 using CoreWeb.Repository;
 using System.Security.Principal;
-using CoreWeb.Authentication;
 using CoreWeb.Crypto;
 using System.Reflection;
 using System.IO;
@@ -26,6 +25,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using SendGrid;
 using CoreWeb.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace CoreWeb
 {
@@ -107,7 +107,17 @@ namespace CoreWeb
                     return context.User.HasClaim(c => (c.Type == "role" && c.Value == "Admin") || (c.Type == "role" && c.Value == "Presence") || (c.Type == "role" && c.Value == "ExternalReadOnly"));
                 }));
             });
-            services.AddAuthentication("ApiKeyAuth").AddScheme<ApiKeyAuthOpts, ApiKeyAuthHandler>("ApiKeyAuth", "ApiKeyAuth", opts => { });
+            //services.AddAuthentication("ApiKeyAuth").AddScheme<ApiKeyAuthOpts, ApiKeyAuthHandler>("ApiKeyAuth", "ApiKeyAuth", opts => { });
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(jwtOptions =>
+            {
+                jwtOptions.Authority = "http://localhost:3000";
+                jwtOptions.Audience = "urn:openspy-api";
+                jwtOptions.RequireHttpsMetadata = false;
+                jwtOptions.ClaimsIssuer = jwtOptions.Authority;
+                jwtOptions.MapInboundClaims = false;
+            });
+
 
             services.AddMvc(opt =>
             {
@@ -115,7 +125,8 @@ namespace CoreWeb
                 opt.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
                 opt.Filters.Add(typeof(JsonExceptionFilter));
             }).SetCompatibilityVersion(CompatibilityVersion.Latest)
-            .AddNewtonsoftJson(options => {
+            .AddNewtonsoftJson(options =>
+            {
                 options.SerializerSettings.MaxDepth = 3;
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
@@ -167,13 +178,11 @@ namespace CoreWeb
             services.AddScoped<IRepository<PlayerProgress, PlayerProgressLookup>, PlayerProgressRepository>();
             services.AddScoped<IRepository<Leaderboard, LeaderboardLookup>, LeaderboardRepository>();
 
-            services.AddSingleton<APIKeyProvider>(c => new APIKeyProvider(Configuration.GetValue<string>("APIKeyPrivateKey")));
             //weak RSA provider... 256 bit key length... due to GP max ticket length = 255 bytes...
             services.AddSingleton<PresencePreAuthProvider>(c => new PresencePreAuthProvider(Configuration.GetValue<string>("PresencePreAuthPrivateKey")));
 
             services.AddSingleton<ISendGridClient>(c => new SendGridClient(Configuration.GetValue<string>("SendGrid:Key")));
             services.AddScoped<EmailService>();
-
 
             services.AddSwaggerGenNewtonsoftSupport();
             services.AddSwaggerGen(c => {
@@ -181,35 +190,28 @@ namespace CoreWeb
                 c.CustomSchemaIds( type => type.FullName );
 
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "OpenSpy API", Version = "v1" });
-
-                c.AddSecurityDefinition("ApiKeyAuth", new OpenApiSecurityScheme
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
-                    Name = "APIKey",
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "ApiKeyAuth",
+                    Name = "Authorization",
                     In = ParameterLocation.Header,
-                    Description = "APIKey header."
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "Bearer"
                 });
 
-
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
                     {
+                        new OpenApiSecurityScheme
                         {
-                            new OpenApiSecurityScheme
+                            Reference = new OpenApiReference
                             {
-                                Reference = new OpenApiReference
-                                {
-                                    Type = ReferenceType.SecurityScheme,
-                                    Id = "ApiKeyAuth"
-                                },
-                                Scheme = "ApiKeyAuth",
-                                Name = "APIKey",
-                                In = ParameterLocation.Header,
-
-                            },
-                            new List<string>()
-                        }
-                    });
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
         }

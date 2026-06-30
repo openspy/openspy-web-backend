@@ -2853,7 +2853,8 @@ INSERT INTO `games` VALUES
 (2985,'casinotourwii','WykxqZ','Casino Tournament (Wii)',6500,0,0,'\\country\\gamemode\\gametype\\gamever\\hostname\\mapname\\maxplayers\\numplayers\\password','\\0\\0\\0\\0\\0\\0\\1\\1\\1'),
 (2986,'casinotourwiiam','','Casino Tournament  Automatch (Wii)',6500,0,0,'',''),
 (2987,'thugpro','AdLWaZ','THUG Pro',5153,0,0,'\\country\\gamemode\\gametype\\gamever\\hostname\\mapname\\maxplayers\\numplayers\\password','\\0\\0\\0\\0\\0\\0\\1\\1\\1'),
-(2988,'flatout2tr','G3FLzP','FlatOut 2 Threadripper',6500,0,0,'','');
+(2988,'flatout2tr','G3FLzP','FlatOut 2 Threadripper',6500,0,0,'',''),
+(2989,'coj2','H0bx87','Call of Juarez: Bound in Blood',6500,0,0,'\\country\\gamemode\\gametype\\gamever\\hostname\\mapname\\maxplayers\\mymaxplayers\\numplayers\\password','\\0\\0\\0\\0\\0\\0\\1\\1\\1\\0');
 /*!40000 ALTER TABLE `games` ENABLE KEYS */;
 UNLOCK TABLES;
 
